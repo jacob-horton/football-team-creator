@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:football/bloc/formation_bloc.dart';
 import 'package:football/models/player.dart';
 import 'package:football/pages/player_selector.dart';
-import 'package:football/utils/window_resize.dart';
 import 'package:football/widgets/player_draggable.dart';
 import 'package:window_size/window_size.dart';
 
@@ -18,91 +17,88 @@ class MainPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xfff5f5f5),
-      body: Container(
-        color: const Color(0xff4eb85c),
-        child: Stack(
-          children: [
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.all(50.0),
-                child: Stack(
-                  children: [
-                    Image.asset('assets/background.png'),
-                  ],
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(10.0),
-              child: Row(
+      backgroundColor: const Color(0xff4eb85c),
+      body: Stack(
+        children: [
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(50.0),
+              child: Stack(
                 children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(5.0),
-                      color: const Color(0xff71c67d),
-                    ),
-                    height: 28.0,
-                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                    child: BlocBuilder<FormationBloc, FormationState>(
-                      builder: (context, state) {
-                        int? index;
-                        if (state is FormationFixed)
-                          index = formations.indexOf(state.formation);
-                        else if (state is FormationCustom) index = formations.length; // Custom (last item in list)
-
-                        return DropdownButtonHideUnderline(
-                          child: DropdownButton(
-                            value: index,
-                            dropdownColor: const Color(0xff333333),
-                            items: _buildDropdownList(),
-                            onChanged: (index) {
-                              if (index == formations.length)
-                                BlocProvider.of<FormationBloc>(context).add(new SetCustomFormation()); // Last item in list selected - custom
-                              else {
-                                BlocProvider.of<FormationBloc>(context).add(new SetFixedFormation(formation: formations[index as int]));
-                              }
-                            },
-                            iconEnabledColor: Colors.white,
-                            icon: Padding(
-                              padding: const EdgeInsets.only(left: 10.0),
-                              child: Icon(Icons.arrow_drop_down),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  Padding(padding: EdgeInsets.only(left: 10.0)),
-                  TextButton(
-                    style: ButtonStyle(
-                      foregroundColor: MaterialStateProperty.all<Color>(Colors.white),
-                      backgroundColor: MaterialStateProperty.all<Color>(
-                        const Color(0xff71c67d),
-                      ),
-                    ),
-                    onPressed: () => _navigateToPlayerSelector(context),
-                    child: Container(
-                      height: 25.0,
-                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                      child: Center(child: Text('CHANGE PLAYERS', style: TextStyle(letterSpacing: 1.5, fontWeight: FontWeight.w400))),
-                    ),
-                  ),
+                  Image.asset('assets/background.png'),
                 ],
               ),
             ),
-            PlayerDraggable(player: Player(name: 'Jacob Horton', number: 1, score: 10, col: Colors.blue)),
-            PlayerDraggable(player: Player(name: 'Daniel Kingshott', number: 5, score: 1, col: Colors.red)),
-          ],
-        ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(10.0),
+            child: Row(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(5.0),
+                    color: const Color(0xff71c67d),
+                  ),
+                  height: 28.0,
+                  padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                  child: BlocBuilder<FormationBloc, FormationState>(
+                    builder: (context, state) {
+                      int? index;
+                      if (state is FormationFixed)
+                        index = formations.indexOf(state.formation);
+                      else if (state is FormationCustom) index = formations.length; // Custom (last item in list)
+
+                      return DropdownButtonHideUnderline(
+                        child: DropdownButton(
+                          value: index,
+                          dropdownColor: const Color(0xff333333),
+                          items: _buildDropdownList(),
+                          onChanged: (index) {
+                            if (index == formations.length)
+                              BlocProvider.of<FormationBloc>(context).add(new SetCustomFormation()); // Last item in list selected - custom
+                            else {
+                              BlocProvider.of<FormationBloc>(context).add(new SetFixedFormation(formation: formations[index as int]));
+                            }
+                          },
+                          iconEnabledColor: Colors.white,
+                          icon: Padding(
+                            padding: const EdgeInsets.only(left: 10.0),
+                            child: Icon(Icons.arrow_drop_down),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                Padding(padding: EdgeInsets.only(left: 10.0)),
+                TextButton(
+                  style: ButtonStyle(
+                    foregroundColor: MaterialStateProperty.all<Color>(Colors.white),
+                    backgroundColor: MaterialStateProperty.all<Color>(
+                      const Color(0xff71c67d),
+                    ),
+                  ),
+                  onPressed: () => _navigateToPlayerSelector(context),
+                  child: Container(
+                    height: 25.0,
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                    child: Center(child: Text('CHANGE PLAYERS', style: TextStyle(letterSpacing: 1.5, fontWeight: FontWeight.w400))),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          PlayerDraggable(player: Player(name: 'Jacob Horton', number: 1, score: 10, col: Colors.blue)),
+          PlayerDraggable(player: Player(name: 'Daniel Kingshott', number: 5, score: 1, col: Colors.red)),
+        ],
       ),
     );
   }
 
+  // TODO: Make utility function
   _navigateToPlayerSelector(BuildContext context) {
     setWindowTitle('Player Selector');
-    WindowResize.setSize(const Size(500, 725), fixedSize: true);
-    Navigator.of(context).push(MaterialPageRoute(builder: (context) => PlayerSelector()));
+    Navigator.of(context).push(MaterialPageRoute(builder: (context) => PlayerSelector(multiselect: true)));
   }
 
   List<DropdownMenuItem<int>> _buildDropdownList() {

@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:football/bloc/formation_bloc.dart';
 import 'package:football/models/player.dart';
+import 'package:football/pages/player_selector.dart';
+import 'package:window_size/window_size.dart';
 
 class PlayerDraggable extends StatefulWidget {
   final Player player;
@@ -39,6 +41,7 @@ class _PlayerDraggableState extends State<PlayerDraggable> {
       left: offset.dx,
       top: offset.dy,
       child: GestureDetector(
+        onTap: () => _navigateToPlayerSelector(context),
         onPanUpdate: (details) {
           setState(() {
             Size windowSize = MediaQuery.of(context).size;
@@ -79,5 +82,11 @@ class _PlayerDraggableState extends State<PlayerDraggable> {
     if (value < min) return min;
     if (value > max) return max;
     return value;
+  }
+
+  // TODO: Make utility function
+  _navigateToPlayerSelector(BuildContext context) {
+    setWindowTitle('Player Selector');
+    Navigator.of(context).push(MaterialPageRoute(builder: (context) => PlayerSelector(multiselect: false)));
   }
 }
