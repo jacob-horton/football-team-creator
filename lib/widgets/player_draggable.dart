@@ -1,6 +1,8 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:football/bloc/bloc/formation_bloc.dart';
 
 class PlayerDraggable extends StatefulWidget {
   PlayerDraggable({Key? key}) : super(key: key);
@@ -25,6 +27,7 @@ class _PlayerDraggableState extends State<PlayerDraggable> {
         onPanUpdate: (details) {
           setState(() {
             offset = Offset(offset.dx + details.delta.dx, offset.dy + details.delta.dy);
+            BlocProvider.of<FormationBloc>(context).add(SetCustomFormation());
           });
         },
         child: Container(width: 100, height: 100, color: Colors.blue),
