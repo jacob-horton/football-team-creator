@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:desktop_window/desktop_window.dart';
 import 'package:flutter/material.dart';
+import 'package:football/widgets/player_draggable.dart';
 import 'package:window_size/window_size.dart';
 
 void main() {
@@ -77,33 +78,10 @@ class MyApp extends StatelessWidget {
                 ],
               ),
             ),
-            Column(
-              mainAxisSize: MainAxisSize.max,
+            Stack(
               children: [
-                DragTarget(
-                  onWillAccept: (value) => true,
-                  onAccept: (value) => print(value),
-                  builder: (context, _, __) {
-                    return Draggable<Color>(
-                      child: Container(width: 100, height: 100, color: Colors.blue),
-                      childWhenDragging: Container(width: 100, height: 100, color: Colors.black26),
-                      feedback: Container(width: 120, height: 120, color: Colors.blue[300]),
-                      data: Colors.blue,
-                    );
-                  },
-                ),
-                DragTarget(
-                  onWillAccept: (value) => true,
-                  onAccept: (value) => print(value),
-                  builder: (context, _, __) {
-                    return Draggable<Color>(
-                      child: Container(width: 100, height: 100, color: Colors.red),
-                      childWhenDragging: Container(width: 100, height: 100, color: Colors.black26),
-                      feedback: Container(width: 120, height: 120, color: Colors.red[300]),
-                      data: Colors.red,
-                    );
-                  },
-                ),
+                PlayerDraggable(),
+                PlayerDraggable(),
               ],
             ),
           ],
