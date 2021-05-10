@@ -7,23 +7,106 @@ import 'package:window_size/window_size.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-    DesktopWindow.setWindowSize(const Size(700, 500));
+    DesktopWindow.setWindowSize(const Size(800, 512));
+    DesktopWindow.setMinWindowSize(const Size(600, 450));
     setWindowTitle('Team creator');
   }
 
   runApp(MyApp());
 }
- 
+
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Football',
       home: Scaffold(
-        body: Center(
-          child: Container(
-            child: Text('Test'),
-          ),
+        backgroundColor: const Color(0xff4eb85c),
+        body: Stack(
+          children: [
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(50.0),
+                child: Image.asset('assets/background.png'),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(10.0),
+              child: Row(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(5.0),
+                      color: const Color(0xff71c67d),
+                    ),
+                    height: 28.0,
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton(
+                        value: 1,
+                        dropdownColor: const Color(0xff333333),
+                        items: [
+                          DropdownMenuItem(child: Text('4 - 4 - 2', style: TextStyle(color: Colors.white)), value: 1),
+                          DropdownMenuItem(child: Text('3 - 5 - 2', style: TextStyle(color: Colors.white)), value: 2),
+                          DropdownMenuItem(child: Text('Custom', style: TextStyle(color: Colors.white)), value: 3),
+                        ],
+                        onChanged: (a) {},
+                        iconEnabledColor: Colors.white,
+                        icon: Padding(
+                          padding: const EdgeInsets.only(left: 10.0),
+                          child: Icon(Icons.arrow_drop_down),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Padding(padding: EdgeInsets.only(left: 10.0)),
+                  TextButton(
+                    style: ButtonStyle(
+                      foregroundColor: MaterialStateProperty.all<Color>(Colors.white),
+                      backgroundColor: MaterialStateProperty.all<Color>(
+                        const Color(0xff71c67d),
+                      ),
+                    ),
+                    onPressed: () => print('test'),
+                    child: Container(
+                      height: 25.0,
+                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                      child: Center(child: Text('CHANGE PLAYERS', style: TextStyle(letterSpacing: 1.5, fontWeight: FontWeight.w400))),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              mainAxisSize: MainAxisSize.max,
+              children: [
+                DragTarget(
+                  onWillAccept: (value) => true,
+                  onAccept: (value) => print(value),
+                  builder: (context, _, __) {
+                    return Draggable<Color>(
+                      child: Container(width: 100, height: 100, color: Colors.blue),
+                      childWhenDragging: Container(width: 100, height: 100, color: Colors.black26),
+                      feedback: Container(width: 120, height: 120, color: Colors.blue[300]),
+                      data: Colors.blue,
+                    );
+                  },
+                ),
+                DragTarget(
+                  onWillAccept: (value) => true,
+                  onAccept: (value) => print(value),
+                  builder: (context, _, __) {
+                    return Draggable<Color>(
+                      child: Container(width: 100, height: 100, color: Colors.red),
+                      childWhenDragging: Container(width: 100, height: 100, color: Colors.black26),
+                      feedback: Container(width: 120, height: 120, color: Colors.red[300]),
+                      data: Colors.red,
+                    );
+                  },
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
