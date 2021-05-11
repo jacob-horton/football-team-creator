@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:football/data/moor_database.dart';
+import 'package:moor/moor.dart' hide Column;
+import 'package:provider/provider.dart';
 
 import 'input_box.dart';
 
@@ -20,11 +23,27 @@ class PlayerSearcher extends StatelessWidget {
               Expanded(child: InputBox(hint: 'Search', icon: Icons.search)),
               Padding(
                 padding: const EdgeInsets.only(left: 15),
-                child: GestureDetector(child: Icon(Icons.add),  onTap: () => print('Add player')),
+                child: GestureDetector(
+                  child: Icon(Icons.add),
+                  onTap: () => Provider.of<AppDatabase>(context, listen: false).insertPlayer(
+                    PlayersCompanion(
+                      name: Value('Jacob'),
+                      colour: Value('red'),
+                      number: Value(5),
+                      score: Value(10),
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
-          Expanded(child: ListView(children: [])),
+          Expanded(child: StreamBuilder<List<Player>>(
+            stream: Provider.of<AppDatabase>(context).watchAllPLayers(),
+            builder: (context, snapshot) {
+              final players = snapshot.data ?? [];
+              return ListView(children: players.map((player) => Text(player.name)).toList());
+            }
+          )),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [

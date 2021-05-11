@@ -2,7 +2,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:football/data/moor_database.dart';
 import 'package:football/utils/window_resize.dart';
+import 'package:provider/provider.dart';
 import 'package:window_size/window_size.dart';
 
 import 'bloc/formation_bloc.dart';
@@ -29,22 +31,25 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => FormationBloc(),
-      child: MaterialApp(
-        title: appName,
-        theme: ThemeData(
-          fontFamily: 'Arial',
-          textTheme: TextTheme(
-            bodyText1: textStyle,
-            subtitle1: textStyle,
-            caption: TextStyle(
-              fontSize: 16,
-              color: const Color(0xffb0b0b0),
+    return Provider(
+      create: (_) => AppDatabase(),
+      child: BlocProvider(
+        create: (context) => FormationBloc(),
+        child: MaterialApp(
+          title: appName,
+          theme: ThemeData(
+            fontFamily: 'Arial',
+            textTheme: TextTheme(
+              bodyText1: textStyle,
+              subtitle1: textStyle,
+              caption: TextStyle(
+                fontSize: 16,
+                color: const Color(0xffb0b0b0),
+              ),
             ),
           ),
+          home: MainPage(),
         ),
-        home: MainPage(),
       ),
     );
   }

@@ -1,10 +1,8 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:football/bloc/formation_bloc.dart';
-import 'package:football/models/player.dart';
+import 'package:football/data/moor_database.dart';
 import 'package:football/pages/player_selector.dart';
 
 class PlayerDraggable extends StatefulWidget {
@@ -68,7 +66,7 @@ class _PlayerDraggableState extends State<PlayerDraggable> {
                   'assets/shirt.svg',
                   width: size,
                   height: size,
-                  color: widget.player.col,
+                  color: Colors.red, //widget.player.col,
                   colorBlendMode: BlendMode.color,
                 ),
               ),

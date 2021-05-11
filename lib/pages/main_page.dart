@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:football/models/player.dart';
+import 'package:football/data/moor_database.dart';
 import 'package:football/pages/team_editor.dart';
 import 'package:football/utils/navigation.dart';
 import 'package:football/widgets/formation_dropdown.dart';
 import 'package:football/widgets/player_draggable.dart';
 import 'package:football/widgets/rounded_container.dart';
+import 'package:provider/provider.dart';
 
 class MainPage extends StatelessWidget {
   final List<List<int>> formations = [
@@ -12,10 +13,10 @@ class MainPage extends StatelessWidget {
     [3, 5, 2]
   ];
 
-  final List<Player> players = [
-    Player(name: 'Jacob Horton', number: 1, score: 10, col: Colors.lightBlue),
-    Player(name: 'Daniel Kingshott', number: 5, score: 1, col: Colors.red)
-  ];
+  //final List<Player> players = [
+  //  Player(name: 'Jacob Horton', number: 1, score: 10, colour: 'red'),
+  //  Player(name: 'Daniel Kingshott', number: 5, score: 1, colour: 'orange'),
+  //];
 
   MainPage({Key? key}) : super(key: key);
 
@@ -33,7 +34,15 @@ class MainPage extends StatelessWidget {
             ),
           ),
           // Players
-          Stack(children: players.map((player) => PlayerDraggable(player: player)).toList()),
+          StreamBuilder<List<Player>>(
+            stream: Provider.of<AppDatabase>(context, listen: false).watchAllPLayers(),
+            builder: (context, snapshot) {
+              final players = snapshot.data ?? [];
+
+              // TODO: Create and keep track of list of current players
+              return Stack(children: players.map((player) => PlayerDraggable(player: player)).toList());
+            }
+          ),
           // Buttons
           Padding(
             padding: const EdgeInsets.all(10.0),
