@@ -8,23 +8,42 @@ import 'package:window_size/window_size.dart';
 import 'bloc/formation_bloc.dart';
 import 'pages/main_page.dart';
 
+final appName = 'Football Team Creator';
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
     WindowResize.setWidthMaintainAspect(1000, fixedSize: true);
-    setWindowTitle('Team creator');
+    setWindowTitle(appName);
   }
 
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  static const textStyle = TextStyle(
+    letterSpacing: 0.8,
+    fontWeight: FontWeight.w400,
+    color: Colors.white,
+  );
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => FormationBloc(),
       child: MaterialApp(
-        title: 'Football',
+        title: appName,
+        theme: ThemeData(
+          fontFamily: 'Arial',
+          textTheme: TextTheme(
+            bodyText1: textStyle,
+            subtitle1: textStyle,
+            caption: TextStyle(
+              fontSize: 16,
+              color: const Color(0xffb0b0b0),
+            ),
+          ),
+        ),
         home: MainPage(),
       ),
     );

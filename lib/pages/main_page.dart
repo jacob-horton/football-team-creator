@@ -2,14 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:football/bloc/formation_bloc.dart';
 import 'package:football/models/player.dart';
-import 'package:football/pages/player_selector.dart';
+import 'package:football/pages/team_editor.dart';
+import 'package:football/utils/navigation.dart';
+import 'package:football/widgets/formation_dropdown.dart';
 import 'package:football/widgets/player_draggable.dart';
-import 'package:window_size/window_size.dart';
+import 'package:football/widgets/rounded_container.dart';
 
 class MainPage extends StatelessWidget {
   final List<List<int>> formations = [
     [4, 4, 2],
     [3, 5, 2]
+  ];
+
+  final List<Player> players = [
+    Player(name: 'Jacob Horton', number: 1, score: 10, col: Colors.blue),
+    Player(name: 'Daniel Kingshott', number: 5, score: 1, col: Colors.red)
   ];
 
   MainPage({Key? key}) : super(key: key);
@@ -20,112 +27,43 @@ class MainPage extends StatelessWidget {
       backgroundColor: const Color(0xff4eb85c),
       body: Stack(
         children: [
+          // Background
           Center(
             child: Padding(
               padding: const EdgeInsets.all(50.0),
-              child: Stack(
-                children: [
-                  Image.asset('assets/background.png'),
-                ],
-              ),
+              child: Image.asset('assets/background.png'),
             ),
           ),
+          // Players
+          Stack(children: players.map((player) => PlayerDraggable(player: player)).toList()),
+          // Buttons
           Padding(
             padding: const EdgeInsets.all(10.0),
             child: Row(
               children: [
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(5.0),
-                    color: const Color(0xff71c67d),
-                  ),
-                  height: 28.0,
-                  padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                  child: BlocBuilder<FormationBloc, FormationState>(
-                    builder: (context, state) {
-                      int? index;
-                      if (state is FormationFixed)
-                        index = formations.indexOf(state.formation);
-                      else if (state is FormationCustom) index = formations.length; // Custom (last item in list)
-
-                      return DropdownButtonHideUnderline(
-                        child: DropdownButton(
-                          value: index,
-                          dropdownColor: const Color(0xff333333),
-                          items: _buildDropdownList(),
-                          onChanged: (index) {
-                            if (index == formations.length)
-                              BlocProvider.of<FormationBloc>(context).add(new SetCustomFormation()); // Last item in list selected - custom
-                            else {
-                              BlocProvider.of<FormationBloc>(context).add(new SetFixedFormation(formation: formations[index as int]));
-                            }
-                          },
-                          iconEnabledColor: Colors.white,
-                          icon: Padding(
-                            padding: const EdgeInsets.only(left: 10.0),
-                            child: Icon(Icons.arrow_drop_down),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
+                FormationDropdown(formations: formations),
                 Padding(padding: EdgeInsets.only(left: 10.0)),
-                TextButton(
-                  style: ButtonStyle(
-                    foregroundColor: MaterialStateProperty.all<Color>(Colors.white),
-                    backgroundColor: MaterialStateProperty.all<Color>(
-                      const Color(0xff71c67d),
-                    ),
-                  ),
-                  onPressed: () => _navigateToPlayerSelector(context),
-                  child: Container(
-                    height: 25.0,
-                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                    child: Center(child: Text('CHANGE PLAYERS', style: TextStyle(letterSpacing: 1.5, fontWeight: FontWeight.w400))),
-                  ),
-                ),
+                _buildChangePlayersButton(context),
               ],
             ),
           ),
-          PlayerDraggable(player: Player(name: 'Jacob Horton', number: 1, score: 10, col: Colors.blue)),
-          PlayerDraggable(player: Player(name: 'Daniel Kingshott', number: 5, score: 1, col: Colors.red)),
         ],
       ),
     );
   }
 
-  // TODO: Make utility function
-  _navigateToPlayerSelector(BuildContext context) {
-    setWindowTitle('Player Selector');
-    Navigator.of(context).push(MaterialPageRoute(builder: (context) => PlayerSelector(multiselect: true)));
-  }
-
-  List<DropdownMenuItem<int>> _buildDropdownList() {
-    List<DropdownMenuItem<int>> dropdownItems = [];
-    for (int i = 0; i < formations.length; i++) {
-      String formationString = _getFormationString(formations[i]);
-      dropdownItems.add(_formationDropdownItem(formationString, i));
-    }
-
-    dropdownItems.add(_formationDropdownItem('CUSTOM', formations.length));
-    return dropdownItems;
-  }
-
-  DropdownMenuItem<int> _formationDropdownItem(String formationString, int index) {
-    return DropdownMenuItem(
-      child: Text(formationString, style: TextStyle(color: Colors.white)),
-      value: index,
+  Widget _buildChangePlayersButton(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Navigation.navigateTo(context, TeamEditor()),
+      child: RoundedContainer(
+        colour: const Color(0xff71c67d),
+        child: Center(
+          child: Text(
+            'CHANGE PLAYERS',
+            style: Theme.of(context).textTheme.bodyText1,
+          ),
+        ),
+      ),
     );
-  }
-
-  String _getFormationString(List<int> formation) {
-    String formationString = '';
-    for (int i = 0; i < formation.length; i++) {
-      formationString += formation[i].toString();
-      if (i != formation.length - 1) formationString += ' - ';
-    }
-
-    return formationString;
   }
 }
