@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:football/bloc/formation_bloc.dart';
 import 'package:football/models/player.dart';
 import 'package:football/pages/team_editor.dart';
 import 'package:football/utils/navigation.dart';
@@ -15,7 +13,7 @@ class MainPage extends StatelessWidget {
   ];
 
   final List<Player> players = [
-    Player(name: 'Jacob Horton', number: 1, score: 10, col: Colors.blue),
+    Player(name: 'Jacob Horton', number: 1, score: 10, col: Colors.lightBlue),
     Player(name: 'Daniel Kingshott', number: 5, score: 1, col: Colors.red)
   ];
 

@@ -5,7 +5,6 @@ class PlayerEditor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // TODO: Make colours global constants
     return Center(child: Text('Player not selected', style: Theme.of(context).textTheme.caption));
   }
 }

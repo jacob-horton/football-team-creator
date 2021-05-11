@@ -30,13 +30,14 @@ dependencies:
   cupertino_icons: ^1.0.2
   desktop_window: ^0.4.0
   flutter_bloc: ^7.0.0
+  flutter_svg: ^0.22.0
   moor_flutter: ^4.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  moor_generator: ^4.2.2
   build_runner: null
+  moor_generator: ^4.2.2
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -44,6 +45,7 @@ dev_dependencies:
 flutter:
   assets:
     - assets/background.png
+    - assets/shirt.svg
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
