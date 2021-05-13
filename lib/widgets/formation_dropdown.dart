@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:football/bloc/formation_bloc.dart';
+import 'package:football/bloc/formation/formation_bloc.dart';
 import 'package:football/widgets/rounded_container.dart';
 
 class FormationDropdown extends StatelessWidget {
   final List<List<int>> formations;
+  final Function(List<int>) onFormationSelected;
 
-  const FormationDropdown({Key? key, required this.formations}) : super(key: key);
+  const FormationDropdown({Key? key, required this.formations, required this.onFormationSelected}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +19,7 @@ class FormationDropdown extends StatelessWidget {
             child: DropdownButton(
               value: _getIndex(state),
               dropdownColor: const Color(0xff333333),
-              items: _buildDropdownList(),
+              items: _buildDropdownList(state),
               onChanged: (index) {
                 FormationBloc provider = BlocProvider.of<FormationBloc>(context);
                 if (index == formations.length)
@@ -38,19 +39,27 @@ class FormationDropdown extends StatelessWidget {
     );
   }
 
-  List<DropdownMenuItem<int>> _buildDropdownList() {
+  List<DropdownMenuItem<int>> _buildDropdownList(FormationState state) {
     List<DropdownMenuItem<int>> dropdownItems = [];
     for (int i = 0; i < formations.length; i++) {
       String formationString = _getFormationString(formations[i]);
-      dropdownItems.add(_buildFormationDropdownItem(formationString, i));
+      dropdownItems.add(_buildFormationDropdownItem(state, formationString, i));
     }
 
-    dropdownItems.add(_buildFormationDropdownItem('CUSTOM', formations.length));
+    dropdownItems.add(_buildFormationDropdownItem(state, 'CUSTOM', formations.length));
     return dropdownItems;
   }
 
-  DropdownMenuItem<int> _buildFormationDropdownItem(String formationString, int index) {
+  DropdownMenuItem<int> _buildFormationDropdownItem(FormationState state, String formationString, int index) {
     return DropdownMenuItem(
+      onTap: () {
+        if (state is FormationFixed) {
+          List<int> formation = state.formation;
+          // TODO: Set player positions based on formation
+          // IDEA: Have a callback function so main_page can handle setting player positions
+          onFormationSelected(formation);
+        }
+      },
       child: Text(formationString),
       value: index,
     );

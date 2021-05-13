@@ -25,25 +25,35 @@ class PlayerSearcher extends StatelessWidget {
                 padding: const EdgeInsets.only(left: 15),
                 child: GestureDetector(
                   child: Icon(Icons.add),
-                  onTap: () => Provider.of<AppDatabase>(context, listen: false).insertPlayer(
-                    PlayersCompanion(
-                      name: Value('Jacob'),
-                      colour: Value('red'),
-                      number: Value(5),
-                      score: Value(10),
-                    ),
-                  ),
+                  onTap: () async {
+                    int id = await Provider.of<PlayerDao>(context, listen: false).insertPlayer(
+                      PlayersCompanion(
+                        name: Value('Daniel Kinshott'),
+                        colour: Value('red'),
+                        number: Value(5),
+                        score: Value(10),
+                        preferedPosition: Value(0),
+                      ),
+                    );
+                    Provider.of<CurrentPlayerDao>(context, listen: false).insertPlayer(
+                      PlayerPositionsCompanion(
+                        playerId: Value(id),
+                        x: Value(100),
+                        y: Value(200),
+                      ),
+                    );
+                  },
                 ),
               ),
             ],
           ),
-          Expanded(child: StreamBuilder<List<Player>>(
-            stream: Provider.of<AppDatabase>(context).watchAllPLayers(),
-            builder: (context, snapshot) {
-              final players = snapshot.data ?? [];
-              return ListView(children: players.map((player) => Text(player.name)).toList());
-            }
-          )),
+          Expanded(
+              child: StreamBuilder<List<Player>>(
+                  stream: Provider.of<PlayerDao>(context).watchAllPlayers(),
+                  builder: (context, snapshot) {
+                    final players = snapshot.data ?? [];
+                    return ListView(children: players.map((player) => Text(player.name)).toList());
+                  })),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [

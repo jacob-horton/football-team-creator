@@ -1,25 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:football/bloc/formation_bloc.dart';
+import 'package:football/bloc/formation/formation_bloc.dart';
 import 'package:football/data/moor_database.dart';
 import 'package:football/pages/player_selector.dart';
+import 'package:football/utils/shirt_colours.dart';
+import 'package:provider/provider.dart';
 
 class PlayerDraggable extends StatefulWidget {
-  final Player player;
+  static const double size = 90;
+  final PlayerWithPosition playerWithPosition;
 
-  PlayerDraggable({Key? key, required this.player}) : super(key: key);
+  PlayerDraggable({Key? key, required this.playerWithPosition}) : super(key: key);
 
   @override
-  _PlayerDraggableState createState() => _PlayerDraggableState();
+  _PlayerDraggableState createState() => _PlayerDraggableState(
+        Offset(
+          playerWithPosition.position.x.toDouble(),
+          playerWithPosition.position.y.toDouble(),
+        ),
+      );
 }
 
 class _PlayerDraggableState extends State<PlayerDraggable> {
-  static const double size = 120;
-  final clipper = ShirtClip(size);
+  final clipper = ShirtClip(PlayerDraggable.size);
+  Offset offset;
 
-  //Size previousSize = Size(1, 1);
-  Offset offset = Offset(50, 50);
+  _PlayerDraggableState(this.offset);
 
   @override
   Widget build(BuildContext context) {
@@ -42,31 +49,33 @@ class _PlayerDraggableState extends State<PlayerDraggable> {
             Size windowSize = MediaQuery.of(context).size;
 
             // Clamp to border of window
-            double offX = _clamp(offset.dx + details.delta.dx, 0, windowSize.width - size);
-            double offY = _clamp(offset.dy + details.delta.dy, 0, windowSize.height - size);
+            double offX = _clamp(offset.dx + details.delta.dx, 0, windowSize.width - PlayerDraggable.size);
+            double offY = _clamp(offset.dy + details.delta.dy, 0, windowSize.height - PlayerDraggable.size);
 
             // Correct offset when mouse moved outside window
-            if (details.globalPosition.dx < 0) offX = 0;
-            if (details.globalPosition.dy < 0) offY = 0;
-            if (details.globalPosition.dx > windowSize.width) offX = windowSize.width - size;
-            if (details.globalPosition.dy > windowSize.height) offY = windowSize.height - size;
+            //if (details.globalPosition.dx < 0) offX = 0;
+            //if (details.globalPosition.dy < 0) offY = 0;
+            //if (details.globalPosition.dx > windowSize.width) offX = windowSize.width - size;
+            //if (details.globalPosition.dy > windowSize.height) offY = windowSize.height - size;
 
             offset = Offset(offX, offY);
-            BlocProvider.of<FormationBloc>(context).add(SetCustomFormation());
+            BlocProvider.of<FormationBloc>(context, listen: false).add(SetCustomFormation());
+            
           });
         },
+        onPanEnd: (_) => Provider.of<CurrentPlayerDao>(context, listen: false).updatePlayer(widget.playerWithPosition.position.copyWith(x: offset.dx, y: offset.dy)),
         child: Container(
-          width: size,
-          height: size,
+          width: PlayerDraggable.size,
+          height: PlayerDraggable.size,
           child: Stack(
             children: [
               ClipPath(
                 clipper: clipper,
                 child: SvgPicture.asset(
                   'assets/shirt.svg',
-                  width: size,
-                  height: size,
-                  color: Colors.red, //widget.player.col,
+                  width: PlayerDraggable.size,
+                  height: PlayerDraggable.size,
+                  color: ShirtColours.colours[widget.playerWithPosition.player.colour],
                   colorBlendMode: BlendMode.color,
                 ),
               ),
@@ -74,8 +83,8 @@ class _PlayerDraggableState extends State<PlayerDraggable> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(widget.player.name.split(' ').last.toUpperCase()),
-                    Text(widget.player.number.toString()),
+                    Text(widget.playerWithPosition.player.name.split(' ').last.toUpperCase()),
+                    Text(widget.playerWithPosition.player.number.toString()),
                   ],
                 ),
               ),
