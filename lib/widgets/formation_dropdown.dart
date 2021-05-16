@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:football/bloc/current_team/current_team_bloc.dart';
 import 'package:football/bloc/formation/formation_bloc.dart';
 import 'package:football/widgets/rounded_container.dart';
 
@@ -20,11 +21,13 @@ class FormationDropdown extends StatelessWidget {
               dropdownColor: const Color(0xff333333),
               items: _buildDropdownList(state),
               onChanged: (index) {
-                FormationBloc provider = BlocProvider.of<FormationBloc>(context);
+                FormationBloc formationBloc = BlocProvider.of<FormationBloc>(context);
+                final team = BlocProvider.of<CurrentTeamBloc>(context).state.team;
+
                 if (index == formations.length)
-                  provider.add(new SetCustomFormation()); // Last item in list selected - set to custom
+                  formationBloc.add(new SetCustomFormation(team: team)); // Last item in list selected - set to custom
                 else
-                  provider.add(new SetFixedFormation(formation: formations[index as int], windowSize: MediaQuery.of(context).size));
+                  formationBloc.add(new SetFixedFormation(team: team, formation: formations[index as int], windowSize: MediaQuery.of(context).size));
               },
               iconEnabledColor: Colors.white,
               icon: Padding(
@@ -51,14 +54,6 @@ class FormationDropdown extends StatelessWidget {
 
   DropdownMenuItem<int> _buildFormationDropdownItem(FormationState state, String formationString, int index) {
     return DropdownMenuItem(
-      onTap: () {
-        if (state is FormationFixed) {
-          //List<int> formation = state.formation;
-          //// TODO: Set player positions based on formation
-          //// IDEA: Have a callback function so main_page can handle setting player positions
-          //onFormationSelected(formation);
-        }
-      },
       child: Text(formationString),
       value: index,
     );

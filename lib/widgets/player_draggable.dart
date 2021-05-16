@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:football/bloc/formation/formation_bloc.dart';
 import 'package:football/data/moor_database.dart';
 import 'package:football/pages/player_selector.dart';
+import 'package:football/utils/navigation.dart';
 import 'package:football/utils/shirt_colours.dart';
 
 class PlayerDraggable extends StatelessWidget {
@@ -28,7 +29,7 @@ class PlayerDraggable extends StatelessWidget {
       left: playerWithPosition.position.x,
       top: playerWithPosition.position.y,
       child: GestureDetector(
-        onTap: () => PlayerSelector(multiselect: false),
+        onTap: () => Navigation.navigateTo(context, PlayerSelector(multiselect: false)),
         onPanUpdate: (details) {
           Size windowSize = MediaQuery.of(context).size;
 
@@ -54,10 +55,10 @@ class PlayerDraggable extends StatelessWidget {
           );
         },
         onPanEnd: (_) {
-          BlocProvider.of<FormationBloc>(context).add(SetCustomFormation());
+          final bloc = BlocProvider.of<FormationBloc>(context);
+          bloc.add(SetCustomFormation(team: playerWithPosition.position.team));
+          bloc.add(SaveFormation());
         },
-        //onPanEnd: (_) => Provider.of<CurrentPlayerDao>(context, listen: false)
-        //.updatePlayer(widget.playerWithPosition.position.copyWith(x: offset.dx, y: offset.dy)),
         child: Container(
           width: PlayerDraggable.size,
           height: PlayerDraggable.size,

@@ -7,6 +7,7 @@ import 'package:football/utils/window_resize.dart';
 import 'package:provider/provider.dart';
 import 'package:window_size/window_size.dart';
 
+import 'bloc/current_team/current_team_bloc.dart';
 import 'bloc/formation/formation_bloc.dart';
 import 'pages/main_page.dart';
 
@@ -32,12 +33,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final db = AppDatabase();
-    return MultiProvider(
-      providers: [
-        Provider(create: (_) => db.playerDao),
-      ],
-      child: BlocProvider(
-        create: (context) => FormationBloc(dao: db.currentPlayerDao),
+    return Provider(
+      create: (_) => db.playerDao,
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider(create: (_) => FormationBloc(dao: db.currentPlayerDao)),
+          BlocProvider(create: (_) => CurrentTeamBloc()),
+        ],
         child: MaterialApp(
           title: appName,
           theme: ThemeData(

@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:football/bloc/current_team/current_team_bloc.dart';
 import 'package:football/bloc/formation/formation_bloc.dart';
 import 'package:football/pages/team_editor.dart';
 import 'package:football/utils/navigation.dart';
@@ -21,11 +22,6 @@ class MainPage extends StatelessWidget {
     [3, 5, 2],
     [4, 4, 2],
   ];
-
-  //final List<Player> players = [
-  //  Player(name: 'Jacob Horton', number: 1, score: 10, colour: 'red'),
-  //  Player(name: 'Daniel Kingshott', number: 5, score: 1, colour: 'orange'),
-  //];
 
   MainPage({Key? key}) : super(key: key);
 
@@ -47,6 +43,7 @@ class MainPage extends StatelessWidget {
             builder: (context, state) => PageView(
               controller: controller,
               physics: NeverScrollableScrollPhysics(),
+              onPageChanged: (index) => BlocProvider.of<CurrentTeamBloc>(context).add(SetCurrentTeam(team: index + 1)),
               children: [_buildTeam(context, state, 1), _buildTeam(context, state, 2)],
             ),
           ),
@@ -67,10 +64,11 @@ class MainPage extends StatelessWidget {
   }
 
   Stack _buildTeam(BuildContext context, FormationState state, int team) {
-    final players = state.players;
+    final players = state.teams[team - 1];
 
     String teamText = " Team $team ";
-    if (team == 1) teamText = " " + teamText + ">";
+    if (team == 1)
+      teamText = " " + teamText + ">";
     else if (team == 2) teamText = "<" + teamText + " ";
 
     return Stack(
@@ -80,15 +78,20 @@ class MainPage extends StatelessWidget {
           alignment: Alignment.bottomCenter,
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onTap: () => team == 1
-                ? controller.nextPage(
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.ease,
-                  )
-                : controller.previousPage(
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.ease,
-                  ),
+            onTap: () {
+              BlocProvider.of<FormationBloc>(context).add(SetCustomFormation(team: team == 1 ? 2 : 1));
+              if (team == 1) {
+                controller.nextPage(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.ease,
+                );
+              } else {
+                controller.previousPage(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.ease,
+                );
+              }
+            },
             child: Padding(
               padding: const EdgeInsets.all(15.0),
               child: Text(teamText, style: Theme.of(context).textTheme.bodyText1),

@@ -78,25 +78,27 @@ class CurrentPlayerDao extends DatabaseAccessor<AppDatabase> with _$CurrentPlaye
 
   CurrentPlayerDao(this.db) : super(db);
 
-  Stream<List<PlayerWithPosition>> watchAllPlayers() => select(playerPositions)
-      .join(
-        [
-          leftOuterJoin(
-            players,
-            players.id.equalsExp(playerPositions.playerId),
+  Stream<List<PlayerWithPosition>> watchPlayersOnTeam(int team) {
+    return (select(playerPositions)..where((t) => t.team.equals(team)))
+        .join(
+          [
+            leftOuterJoin(
+              players,
+              players.id.equalsExp(playerPositions.playerId),
+            ),
+          ],
+        )
+        .map(
+          (row) => PlayerWithPosition(
+            player: row.readTable(players),
+            position: row.readTable(playerPositions),
           ),
-        ],
-      )
-      .map(
-        (row) => PlayerWithPosition(
-          player: row.readTable(players),
-          position: row.readTable(playerPositions),
-        ),
-      )
-      .watch();
+        )
+        .watch();
+  }
 
-  Future<List<PlayerWithPosition>> getAllPlayers() {
-    return select(playerPositions)
+  Future<List<PlayerWithPosition>> getPlayersOnTeam(int team) {
+    return (select(playerPositions)..where((t) => t.team.equals(team)))
         .join(
           [
             leftOuterJoin(
@@ -117,9 +119,4 @@ class CurrentPlayerDao extends DatabaseAccessor<AppDatabase> with _$CurrentPlaye
   Future insertPlayer(Insertable<PlayerPosition> playerPosition) => into(playerPositions).insert(playerPosition);
   Future updatePlayer(Insertable<PlayerPosition> playerPosition) => update(playerPositions).replace(playerPosition);
   Future deletePlayer(Insertable<PlayerPosition> playerPosition) => delete(playerPositions).delete(playerPosition);
-
-  Future updatePlayers(List<Insertable<PlayerPosition>> playerPositions) {
-    for (final playerPosition in playerPositions) updatePlayer(playerPosition);
-    return Future.value();
-  }
 }

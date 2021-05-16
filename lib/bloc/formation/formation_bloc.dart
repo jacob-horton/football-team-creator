@@ -6,13 +6,14 @@ import 'package:flutter/material.dart';
 import 'package:football/data/moor_database.dart';
 import 'package:football/widgets/player_draggable.dart';
 import 'package:meta/meta.dart';
+import 'package:moor/moor.dart';
 
 part 'formation_event.dart';
 part 'formation_state.dart';
 
 class FormationBloc extends Bloc<FormationEvent, FormationState> {
   final CurrentPlayerDao dao;
-  FormationBloc({required this.dao}) : super(FormationCustom(players: [])) {
+  FormationBloc({required this.dao}) : super(FormationCustom(teams: [[], []])) {
     add(LoadPositions());
   }
 
@@ -21,9 +22,13 @@ class FormationBloc extends Bloc<FormationEvent, FormationState> {
     FormationEvent event,
   ) async* {
     if (event is LoadPositions) {
-      yield FormationCustom(players: await dao.getAllPlayers());
+      final teams = [await dao.getPlayersOnTeam(1), await dao.getPlayersOnTeam(2)];
+      yield FormationCustom(teams: teams);
     } else if (event is SetCustomFormation) {
-      yield FormationCustom(players: event.players ?? state.players);
+      final List<List<PlayerWithPosition>> teams = List.from(state.teams);
+      teams[event.team - 1] = event.players ?? teams[event.team - 1];
+
+      yield FormationCustom(teams: teams);
     } else if (event is SetFixedFormation) {
       const double border = 50;
       Offset windowSize = (event.windowSize - Size(border * 2, border * 2)) as Offset;
@@ -36,7 +41,7 @@ class FormationBloc extends Bloc<FormationEvent, FormationState> {
         for (int j = 0; j < event.formation[i]; j++) {
           // TODO: Get random player with correct preferred position
           // TODO: split into teams
-          final player = state.players[index];
+          final player = state.teams[event.team - 1][index];
 
           newPositions.add(
             PlayerWithPosition(
@@ -52,13 +57,31 @@ class FormationBloc extends Bloc<FormationEvent, FormationState> {
         }
       }
 
-      yield FormationFixed(formation: event.formation, players: newPositions);
-    } else if (event is SetPlayerPosition) {
-      final playerToChange = state.players.firstWhere((player) => player.player.id == event.playerPosition.playerId);
-      final index = state.players.indexOf(playerToChange);
+      final List<List<PlayerWithPosition>> teams = List.from(state.teams);
+      teams[event.team - 1] = newPositions;
 
-      final newPositions = List<PlayerWithPosition>.from(state.players);
-      newPositions[index] = PlayerWithPosition(
+      yield FormationFixed(formation: event.formation, teams: teams);
+      add(SaveFormation());
+    } else if (event is SetPlayerPosition) {
+      PlayerWithPosition? playerToChange;
+      bool found = false;
+
+      int teamIndex = 0;
+      int playerIndex = 0;
+      for (teamIndex = 0; teamIndex < state.teams.length; teamIndex++) {
+        for (playerIndex = 0; playerIndex < state.teams[teamIndex].length; playerIndex++) {
+          if (state.teams[teamIndex][playerIndex].player.id == event.playerPosition.playerId) {
+            playerToChange = state.teams[teamIndex][playerIndex];
+            found = true;
+            break;
+          }
+        }
+        if (found) break;
+      }
+
+      if (playerToChange == null) return; // TODO: Handle null player
+      final newPositions = List<PlayerWithPosition>.from(state.teams[teamIndex]);
+      newPositions[playerIndex] = PlayerWithPosition(
         player: playerToChange.player,
         position: playerToChange.position.copyWith(
           x: event.playerPosition.x,
@@ -66,9 +89,18 @@ class FormationBloc extends Bloc<FormationEvent, FormationState> {
         ),
       );
 
-      yield FormationCustom(players: newPositions);
+      final List<List<PlayerWithPosition>> teams = List.from(state.teams);
+      teams[teamIndex] = newPositions;
+
+      yield FormationCustom(teams: teams);
     } else if (event is SaveFormation) {
-      dao.updatePlayers(state.players.map((playerWithPosition) => playerWithPosition.position).toList());
+      for (final team in state.teams) {
+        for (final player in team) {
+          dao.updatePlayer(player.position);
+        }
+      }
+    } else if (event is AddPlayer) {
+      dao.insertPlayer(event.player);
     }
   }
 }

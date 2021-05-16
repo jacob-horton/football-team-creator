@@ -10,10 +10,12 @@ class LoadPositions extends FormationEvent {}
 
 class SetCustomFormation extends FormationEvent {
   final List<PlayerWithPosition>? players;
-  SetCustomFormation({this.players});
+  final int team;
+
+  SetCustomFormation({required this.team, this.players});
 
   @override
-  List<Object?> get props => [players];
+  List<Object?> get props => [team, players];
 }
 
 class SetPlayerPosition extends FormationEvent {
@@ -27,10 +29,21 @@ class SetPlayerPosition extends FormationEvent {
 class SetFixedFormation extends FormationEvent {
   final List<int> formation;
   final Size windowSize;
+  final int team;
 
-  SetFixedFormation({required this.formation, required this.windowSize});
+  SetFixedFormation({required this.formation, required this.windowSize, required this.team});
+
   @override
-  List<Object?> get props => [formation, windowSize];
+  List<Object?> get props => [formation, windowSize, team];
+}
+
+class AddPlayer extends FormationEvent {
+  final Insertable<PlayerPosition> player;
+
+  AddPlayer({required this.player});
+
+  @override
+  List<Object?> get props => [player];
 }
 
 class SaveFormation extends FormationEvent {}

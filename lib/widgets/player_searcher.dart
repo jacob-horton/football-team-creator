@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:football/bloc/formation/formation_bloc.dart';
 import 'package:football/data/moor_database.dart';
 import 'package:moor/moor.dart' hide Column;
 import 'package:provider/provider.dart';
@@ -28,20 +30,24 @@ class PlayerSearcher extends StatelessWidget {
                   onTap: () async {
                     int id = await Provider.of<PlayerDao>(context, listen: false).insertPlayer(
                       PlayersCompanion(
-                        name: Value('Daniel Kinshott'),
-                        colour: Value('red'),
-                        number: Value(5),
-                        score: Value(10),
-                        preferedPosition: Value(0),
+                        name: Value('Jacob Horton'),
+                        colour: Value('blue'),
+                        number: Value(2),
+                        score: Value(7),
+                        preferedPosition: Value(1),
                       ),
                     );
-                    //Provider.of<CurrentPlayerDao>(context, listen: false).insertPlayer(
-                    //  PlayerPositionsCompanion(
-                    //    playerId: Value(id),
-                    //    x: Value(100),
-                    //    y: Value(200),
-                    //  ),
-                    //);
+                    // TODO: Do not add player to a team here
+                    BlocProvider.of<FormationBloc>(context, listen: false).add(
+                      AddPlayer(
+                        player: PlayerPositionsCompanion(
+                          playerId: Value(id),
+                          team: Value(2), // TODO: Assign team
+                          x: Value(100),
+                          y: Value(200),
+                        ),
+                      ),
+                    );
                   },
                 ),
               ),
