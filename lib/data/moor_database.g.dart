@@ -371,9 +371,14 @@ class $PlayersTable extends Players with TableInfo<$PlayersTable, Player> {
 
 class PlayerPosition extends DataClass implements Insertable<PlayerPosition> {
   final int playerId;
+  final int team;
   final double x;
   final double y;
-  PlayerPosition({required this.playerId, required this.x, required this.y});
+  PlayerPosition(
+      {required this.playerId,
+      required this.team,
+      required this.x,
+      required this.y});
   factory PlayerPosition.fromData(
       Map<String, dynamic> data, GeneratedDatabase db,
       {String? prefix}) {
@@ -383,6 +388,7 @@ class PlayerPosition extends DataClass implements Insertable<PlayerPosition> {
     return PlayerPosition(
       playerId:
           intType.mapFromDatabaseResponse(data['${effectivePrefix}player_id'])!,
+      team: intType.mapFromDatabaseResponse(data['${effectivePrefix}team'])!,
       x: doubleType.mapFromDatabaseResponse(data['${effectivePrefix}x'])!,
       y: doubleType.mapFromDatabaseResponse(data['${effectivePrefix}y'])!,
     );
@@ -391,6 +397,7 @@ class PlayerPosition extends DataClass implements Insertable<PlayerPosition> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['player_id'] = Variable<int>(playerId);
+    map['team'] = Variable<int>(team);
     map['x'] = Variable<double>(x);
     map['y'] = Variable<double>(y);
     return map;
@@ -399,6 +406,7 @@ class PlayerPosition extends DataClass implements Insertable<PlayerPosition> {
   PlayerPositionsCompanion toCompanion(bool nullToAbsent) {
     return PlayerPositionsCompanion(
       playerId: Value(playerId),
+      team: Value(team),
       x: Value(x),
       y: Value(y),
     );
@@ -409,6 +417,7 @@ class PlayerPosition extends DataClass implements Insertable<PlayerPosition> {
     serializer ??= moorRuntimeOptions.defaultSerializer;
     return PlayerPosition(
       playerId: serializer.fromJson<int>(json['playerId']),
+      team: serializer.fromJson<int>(json['team']),
       x: serializer.fromJson<double>(json['x']),
       y: serializer.fromJson<double>(json['y']),
     );
@@ -418,14 +427,16 @@ class PlayerPosition extends DataClass implements Insertable<PlayerPosition> {
     serializer ??= moorRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'playerId': serializer.toJson<int>(playerId),
+      'team': serializer.toJson<int>(team),
       'x': serializer.toJson<double>(x),
       'y': serializer.toJson<double>(y),
     };
   }
 
-  PlayerPosition copyWith({int? playerId, double? x, double? y}) =>
+  PlayerPosition copyWith({int? playerId, int? team, double? x, double? y}) =>
       PlayerPosition(
         playerId: playerId ?? this.playerId,
+        team: team ?? this.team,
         x: x ?? this.x,
         y: y ?? this.y,
       );
@@ -433,6 +444,7 @@ class PlayerPosition extends DataClass implements Insertable<PlayerPosition> {
   String toString() {
     return (StringBuffer('PlayerPosition(')
           ..write('playerId: $playerId, ')
+          ..write('team: $team, ')
           ..write('x: $x, ')
           ..write('y: $y')
           ..write(')'))
@@ -440,48 +452,59 @@ class PlayerPosition extends DataClass implements Insertable<PlayerPosition> {
   }
 
   @override
-  int get hashCode =>
-      $mrjf($mrjc(playerId.hashCode, $mrjc(x.hashCode, y.hashCode)));
+  int get hashCode => $mrjf($mrjc(
+      playerId.hashCode, $mrjc(team.hashCode, $mrjc(x.hashCode, y.hashCode))));
   @override
   bool operator ==(dynamic other) =>
       identical(this, other) ||
       (other is PlayerPosition &&
           other.playerId == this.playerId &&
+          other.team == this.team &&
           other.x == this.x &&
           other.y == this.y);
 }
 
 class PlayerPositionsCompanion extends UpdateCompanion<PlayerPosition> {
   final Value<int> playerId;
+  final Value<int> team;
   final Value<double> x;
   final Value<double> y;
   const PlayerPositionsCompanion({
     this.playerId = const Value.absent(),
+    this.team = const Value.absent(),
     this.x = const Value.absent(),
     this.y = const Value.absent(),
   });
   PlayerPositionsCompanion.insert({
     this.playerId = const Value.absent(),
+    required int team,
     required double x,
     required double y,
-  })  : x = Value(x),
+  })  : team = Value(team),
+        x = Value(x),
         y = Value(y);
   static Insertable<PlayerPosition> custom({
     Expression<int>? playerId,
+    Expression<int>? team,
     Expression<double>? x,
     Expression<double>? y,
   }) {
     return RawValuesInsertable({
       if (playerId != null) 'player_id': playerId,
+      if (team != null) 'team': team,
       if (x != null) 'x': x,
       if (y != null) 'y': y,
     });
   }
 
   PlayerPositionsCompanion copyWith(
-      {Value<int>? playerId, Value<double>? x, Value<double>? y}) {
+      {Value<int>? playerId,
+      Value<int>? team,
+      Value<double>? x,
+      Value<double>? y}) {
     return PlayerPositionsCompanion(
       playerId: playerId ?? this.playerId,
+      team: team ?? this.team,
       x: x ?? this.x,
       y: y ?? this.y,
     );
@@ -492,6 +515,9 @@ class PlayerPositionsCompanion extends UpdateCompanion<PlayerPosition> {
     final map = <String, Expression>{};
     if (playerId.present) {
       map['player_id'] = Variable<int>(playerId.value);
+    }
+    if (team.present) {
+      map['team'] = Variable<int>(team.value);
     }
     if (x.present) {
       map['x'] = Variable<double>(x.value);
@@ -506,6 +532,7 @@ class PlayerPositionsCompanion extends UpdateCompanion<PlayerPosition> {
   String toString() {
     return (StringBuffer('PlayerPositionsCompanion(')
           ..write('playerId: $playerId, ')
+          ..write('team: $team, ')
           ..write('x: $x, ')
           ..write('y: $y')
           ..write(')'))
@@ -524,6 +551,17 @@ class $PlayerPositionsTable extends PlayerPositions
   GeneratedIntColumn _constructPlayerId() {
     return GeneratedIntColumn('player_id', $tableName, false,
         $customConstraints: 'REFERENCES players(id)');
+  }
+
+  final VerificationMeta _teamMeta = const VerificationMeta('team');
+  @override
+  late final GeneratedIntColumn team = _constructTeam();
+  GeneratedIntColumn _constructTeam() {
+    return GeneratedIntColumn(
+      'team',
+      $tableName,
+      false,
+    );
   }
 
   final VerificationMeta _xMeta = const VerificationMeta('x');
@@ -549,7 +587,7 @@ class $PlayerPositionsTable extends PlayerPositions
   }
 
   @override
-  List<GeneratedColumn> get $columns => [playerId, x, y];
+  List<GeneratedColumn> get $columns => [playerId, team, x, y];
   @override
   $PlayerPositionsTable get asDslTable => this;
   @override
@@ -564,6 +602,12 @@ class $PlayerPositionsTable extends PlayerPositions
     if (data.containsKey('player_id')) {
       context.handle(_playerIdMeta,
           playerId.isAcceptableOrUnknown(data['player_id']!, _playerIdMeta));
+    }
+    if (data.containsKey('team')) {
+      context.handle(
+          _teamMeta, team.isAcceptableOrUnknown(data['team']!, _teamMeta));
+    } else if (isInserting) {
+      context.missing(_teamMeta);
     }
     if (data.containsKey('x')) {
       context.handle(_xMeta, x.isAcceptableOrUnknown(data['x']!, _xMeta));

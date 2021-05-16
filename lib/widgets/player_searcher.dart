@@ -35,13 +35,13 @@ class PlayerSearcher extends StatelessWidget {
                         preferedPosition: Value(0),
                       ),
                     );
-                    Provider.of<CurrentPlayerDao>(context, listen: false).insertPlayer(
-                      PlayerPositionsCompanion(
-                        playerId: Value(id),
-                        x: Value(100),
-                        y: Value(200),
-                      ),
-                    );
+                    //Provider.of<CurrentPlayerDao>(context, listen: false).insertPlayer(
+                    //  PlayerPositionsCompanion(
+                    //    playerId: Value(id),
+                    //    x: Value(100),
+                    //    y: Value(200),
+                    //  ),
+                    //);
                   },
                 ),
               ),

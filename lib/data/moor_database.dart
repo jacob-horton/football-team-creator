@@ -16,6 +16,7 @@ class Players extends Table {
 
 class PlayerPositions extends Table {
   IntColumn get playerId => integer().customConstraint('REFERENCES players(id)')();
+  IntColumn get team => integer()();
 
   RealColumn get x => real()();
   RealColumn get y => real()();
@@ -77,23 +78,22 @@ class CurrentPlayerDao extends DatabaseAccessor<AppDatabase> with _$CurrentPlaye
 
   CurrentPlayerDao(this.db) : super(db);
 
-  Stream<List<PlayerWithPosition>> watchAllPlayers() => 
-    select(playerPositions)
-        .join(
-          [
-            leftOuterJoin(
-              players,
-              players.id.equalsExp(playerPositions.playerId),
-            ),
-          ],
-        )
-        .map(
-          (row) => PlayerWithPosition(
-            player: row.readTable(players),
-            position: row.readTable(playerPositions),
+  Stream<List<PlayerWithPosition>> watchAllPlayers() => select(playerPositions)
+      .join(
+        [
+          leftOuterJoin(
+            players,
+            players.id.equalsExp(playerPositions.playerId),
           ),
-        )
-        .watch();
+        ],
+      )
+      .map(
+        (row) => PlayerWithPosition(
+          player: row.readTable(players),
+          position: row.readTable(playerPositions),
+        ),
+      )
+      .watch();
 
   Future<List<PlayerWithPosition>> getAllPlayers() {
     return select(playerPositions)
@@ -117,4 +117,9 @@ class CurrentPlayerDao extends DatabaseAccessor<AppDatabase> with _$CurrentPlaye
   Future insertPlayer(Insertable<PlayerPosition> playerPosition) => into(playerPositions).insert(playerPosition);
   Future updatePlayer(Insertable<PlayerPosition> playerPosition) => update(playerPositions).replace(playerPosition);
   Future deletePlayer(Insertable<PlayerPosition> playerPosition) => delete(playerPositions).delete(playerPosition);
+
+  Future updatePlayers(List<Insertable<PlayerPosition>> playerPositions) {
+    for (final playerPosition in playerPositions) updatePlayer(playerPosition);
+    return Future.value();
+  }
 }

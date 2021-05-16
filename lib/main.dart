@@ -35,10 +35,9 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         Provider(create: (_) => db.playerDao),
-        Provider(create: (_) => db.currentPlayerDao),
       ],
       child: BlocProvider(
-        create: (context) => FormationBloc(),
+        create: (context) => FormationBloc(dao: db.currentPlayerDao),
         child: MaterialApp(
           title: appName,
           theme: ThemeData(

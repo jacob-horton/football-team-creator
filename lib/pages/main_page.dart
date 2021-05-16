@@ -1,20 +1,25 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:football/data/moor_database.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:football/bloc/formation/formation_bloc.dart';
 import 'package:football/pages/team_editor.dart';
 import 'package:football/utils/navigation.dart';
 import 'package:football/widgets/formation_dropdown.dart';
 import 'package:football/widgets/player_draggable.dart';
 import 'package:football/widgets/rounded_container.dart';
-import 'package:provider/provider.dart';
 
 class MainPage extends StatelessWidget {
   final PageController controller = PageController(initialPage: 0);
 
   final List<List<int>> formations = [
+    [1, 3, 3, 2, 1],
+    [1, 3, 4, 2],
+    [1, 4, 4, 1],
+    [1, 3, 3, 3],
+    [1, 5, 4],
+    [3, 5, 2],
     [4, 4, 2],
-    [3, 5, 2]
   ];
 
   //final List<Player> players = [
@@ -38,85 +43,19 @@ class MainPage extends StatelessWidget {
             ),
           ),
           // Players
-          PageView(
-            controller: controller,
-            physics: NeverScrollableScrollPhysics(),
-            children: [
-              StreamBuilder<List<PlayerWithPosition>>(
-                stream: Provider.of<CurrentPlayerDao>(context).watchAllPlayers(),
-                builder: (context, snapshot) {
-                  final players = snapshot.data ?? [];
-
-                  return Stack(
-                    children: [
-                      Stack(
-                        children: players.map((player) => PlayerDraggable(playerWithPosition: player)).toList(),
-                      ),
-                      Align(
-                        alignment: Alignment.bottomCenter,
-                        child: GestureDetector(
-                          child: Text('Team 1 >'),
-                          onTap: () => controller.nextPage(duration: Duration(milliseconds: 200), curve: Curves.ease),
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
-              StreamBuilder<List<PlayerWithPosition>>(
-                stream: Provider.of<CurrentPlayerDao>(context, listen: false).watchAllPlayers(),
-                builder: (context, snapshot) {
-                  final players = snapshot.data ?? [];
-
-                  return Stack(
-                    children: [
-                      Stack(
-                        children: players.map((player) => PlayerDraggable(playerWithPosition: player)).toList(),
-                      ),
-                      Align(
-                        alignment: Alignment.bottomCenter,
-                        child: GestureDetector(
-                          child: Text('< Team 2'),
-                          onTap: () => controller.previousPage(duration: Duration(milliseconds: 200), curve: Curves.ease),
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ],
+          BlocBuilder<FormationBloc, FormationState>(
+            builder: (context, state) => PageView(
+              controller: controller,
+              physics: NeverScrollableScrollPhysics(),
+              children: [_buildTeam(context, state, 1), _buildTeam(context, state, 2)],
+            ),
           ),
           // Buttons
           Padding(
             padding: const EdgeInsets.all(10.0),
             child: Row(
               children: [
-                FormationDropdown(
-                  formations: formations,
-                  onFormationSelected: (formation) async {
-                    final dao = Provider.of<CurrentPlayerDao>(context, listen: false);
-                    final players = await dao.getAllPlayers();
-
-                    const double border = 50;
-                    Offset windowSize = (MediaQuery.of(context).size - Size(border * 2, border * 2)) as Offset;
-                    final horizontalSpacing = windowSize.dx / formation.length.toDouble();
-                    for (int i = 0; i < formation.length; i++) {
-                      final verticalSpacing = windowSize.dy / formation[i].toDouble();
-                      for (int j = 0; j < formation[i]; j++) {
-                        //TODO: Get random player with correct preferred position
-                        final player = players[0];
-                        players.removeAt(0);
-
-                        dao.updatePlayer(
-                          player.position.copyWith(
-                            x: horizontalSpacing * i + horizontalSpacing / 2 - PlayerDraggable.size / 2 + border,
-                            y: verticalSpacing * j + verticalSpacing / 2 - PlayerDraggable.size / 2 + border,
-                          ),
-                        );
-                      }
-                    }
-                  },
-                ),
+                FormationDropdown(formations: formations),
                 Padding(padding: EdgeInsets.only(left: 10.0)),
                 _buildChangePlayersButton(context),
               ],
@@ -124,6 +63,39 @@ class MainPage extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Stack _buildTeam(BuildContext context, FormationState state, int team) {
+    final players = state.players;
+
+    String teamText = " Team $team ";
+    if (team == 1) teamText = " " + teamText + ">";
+    else if (team == 2) teamText = "<" + teamText + " ";
+
+    return Stack(
+      children: [
+        Stack(children: players.map((player) => PlayerDraggable(playerWithPosition: player)).toList()),
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => team == 1
+                ? controller.nextPage(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.ease,
+                  )
+                : controller.previousPage(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.ease,
+                  ),
+            child: Padding(
+              padding: const EdgeInsets.all(15.0),
+              child: Text(teamText, style: Theme.of(context).textTheme.bodyText1),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

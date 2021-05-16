@@ -5,28 +5,13 @@ import 'package:football/bloc/formation/formation_bloc.dart';
 import 'package:football/data/moor_database.dart';
 import 'package:football/pages/player_selector.dart';
 import 'package:football/utils/shirt_colours.dart';
-import 'package:provider/provider.dart';
 
-class PlayerDraggable extends StatefulWidget {
+class PlayerDraggable extends StatelessWidget {
   static const double size = 90;
   final PlayerWithPosition playerWithPosition;
+  final clipper = ShirtClip(PlayerDraggable.size);
 
   PlayerDraggable({Key? key, required this.playerWithPosition}) : super(key: key);
-
-  @override
-  _PlayerDraggableState createState() => _PlayerDraggableState(
-        Offset(
-          playerWithPosition.position.x.toDouble(),
-          playerWithPosition.position.y.toDouble(),
-        ),
-      );
-}
-
-class _PlayerDraggableState extends State<PlayerDraggable> {
-  final clipper = ShirtClip(PlayerDraggable.size);
-  Offset offset;
-
-  _PlayerDraggableState(this.offset);
 
   @override
   Widget build(BuildContext context) {
@@ -40,30 +25,39 @@ class _PlayerDraggableState extends State<PlayerDraggable> {
     //}
 
     return Positioned(
-      left: offset.dx,
-      top: offset.dy,
+      left: playerWithPosition.position.x,
+      top: playerWithPosition.position.y,
       child: GestureDetector(
         onTap: () => PlayerSelector(multiselect: false),
         onPanUpdate: (details) {
-          setState(() {
-            Size windowSize = MediaQuery.of(context).size;
+          Size windowSize = MediaQuery.of(context).size;
 
-            // Clamp to border of window
-            double offX = _clamp(offset.dx + details.delta.dx, 0, windowSize.width - PlayerDraggable.size);
-            double offY = _clamp(offset.dy + details.delta.dy, 0, windowSize.height - PlayerDraggable.size);
+          // Clamp to border of window
+          double offX = _clamp(playerWithPosition.position.x + details.delta.dx, 0, windowSize.width - PlayerDraggable.size);
+          double offY = _clamp(playerWithPosition.position.y + details.delta.dy, 0, windowSize.height - PlayerDraggable.size);
 
-            // Correct offset when mouse moved outside window
-            //if (details.globalPosition.dx < 0) offX = 0;
-            //if (details.globalPosition.dy < 0) offY = 0;
-            //if (details.globalPosition.dx > windowSize.width) offX = windowSize.width - size;
-            //if (details.globalPosition.dy > windowSize.height) offY = windowSize.height - size;
+          // Correct offset when mouse moved outside window
+          if (details.globalPosition.dx < 0) offX = 0;
+          if (details.globalPosition.dy < 0) offY = 0;
+          if (details.globalPosition.dx > windowSize.width) offX = windowSize.width - size;
+          if (details.globalPosition.dy > windowSize.height) offY = windowSize.height - size;
 
-            offset = Offset(offX, offY);
-            BlocProvider.of<FormationBloc>(context, listen: false).add(SetCustomFormation());
-            
-          });
+          BlocProvider.of<FormationBloc>(context, listen: false).add(
+            SetPlayerPosition(
+              playerPosition: playerWithPosition.position.copyWith(
+                playerId: playerWithPosition.player.id,
+                team: 1,
+                x: offX,
+                y: offY,
+              ),
+            ),
+          );
         },
-        onPanEnd: (_) => Provider.of<CurrentPlayerDao>(context, listen: false).updatePlayer(widget.playerWithPosition.position.copyWith(x: offset.dx, y: offset.dy)),
+        onPanEnd: (_) {
+          BlocProvider.of<FormationBloc>(context).add(SetCustomFormation());
+        },
+        //onPanEnd: (_) => Provider.of<CurrentPlayerDao>(context, listen: false)
+        //.updatePlayer(widget.playerWithPosition.position.copyWith(x: offset.dx, y: offset.dy)),
         child: Container(
           width: PlayerDraggable.size,
           height: PlayerDraggable.size,
@@ -75,7 +69,7 @@ class _PlayerDraggableState extends State<PlayerDraggable> {
                   'assets/shirt.svg',
                   width: PlayerDraggable.size,
                   height: PlayerDraggable.size,
-                  color: ShirtColours.colours[widget.playerWithPosition.player.colour],
+                  color: ShirtColours.colours[playerWithPosition.player.colour],
                   colorBlendMode: BlendMode.color,
                 ),
               ),
@@ -83,8 +77,21 @@ class _PlayerDraggableState extends State<PlayerDraggable> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(widget.playerWithPosition.player.name.split(' ').last.toUpperCase()),
-                    Text(widget.playerWithPosition.player.number.toString()),
+                    Text(playerWithPosition.player.number.toString(), style: Theme.of(context).textTheme.bodyText1?.copyWith(fontSize: 30.0)),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 23.0),
+                      child: FittedBox(
+                        fit: BoxFit.cover,
+                        child: Text(
+                          playerWithPosition.player.name.split(' ').last.toUpperCase(),
+                          style: TextStyle(
+                            letterSpacing: -0.1,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),

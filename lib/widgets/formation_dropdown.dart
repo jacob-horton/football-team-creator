@@ -5,9 +5,8 @@ import 'package:football/widgets/rounded_container.dart';
 
 class FormationDropdown extends StatelessWidget {
   final List<List<int>> formations;
-  final Function(List<int>) onFormationSelected;
 
-  const FormationDropdown({Key? key, required this.formations, required this.onFormationSelected}) : super(key: key);
+  const FormationDropdown({Key? key, required this.formations}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -23,9 +22,9 @@ class FormationDropdown extends StatelessWidget {
               onChanged: (index) {
                 FormationBloc provider = BlocProvider.of<FormationBloc>(context);
                 if (index == formations.length)
-                  provider.add(new SetCustomFormation()); // Last item in list selected - custom
+                  provider.add(new SetCustomFormation()); // Last item in list selected - set to custom
                 else
-                  provider.add(new SetFixedFormation(formation: formations[index as int]));
+                  provider.add(new SetFixedFormation(formation: formations[index as int], windowSize: MediaQuery.of(context).size));
               },
               iconEnabledColor: Colors.white,
               icon: Padding(
@@ -54,10 +53,10 @@ class FormationDropdown extends StatelessWidget {
     return DropdownMenuItem(
       onTap: () {
         if (state is FormationFixed) {
-          List<int> formation = state.formation;
-          // TODO: Set player positions based on formation
-          // IDEA: Have a callback function so main_page can handle setting player positions
-          onFormationSelected(formation);
+          //List<int> formation = state.formation;
+          //// TODO: Set player positions based on formation
+          //// IDEA: Have a callback function so main_page can handle setting player positions
+          //onFormationSelected(formation);
         }
       },
       child: Text(formationString),
