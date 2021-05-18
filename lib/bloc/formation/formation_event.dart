@@ -46,4 +46,14 @@ class AddPlayer extends FormationEvent {
   List<Object?> get props => [player];
 }
 
+class SwapPlayer extends FormationEvent {
+  final PlayerWithPosition oldPlayer;
+  final Player newPlayer;
+
+  SwapPlayer({required this.oldPlayer, required this.newPlayer});
+
+  @override
+  List<Object?> get props => [oldPlayer, newPlayer];
+}
+
 class SaveFormation extends FormationEvent {}

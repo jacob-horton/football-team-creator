@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:football/bloc/current_player/current_player_bloc.dart';
 import 'package:football/bloc/formation/formation_bloc.dart';
 import 'package:football/data/moor_database.dart';
+import 'package:football/widgets/player_list_item.dart';
 import 'package:moor/moor.dart' hide Column;
 import 'package:provider/provider.dart';
 
@@ -9,15 +11,15 @@ import 'input_box.dart';
 
 class PlayerSearcher extends StatelessWidget {
   final bool multiselect;
-  final void Function() onOk;
+  final void Function() onSelect;
   final void Function() onCancel;
 
-  const PlayerSearcher({Key? key, required this.onOk, required this.onCancel, required this.multiselect}) : super(key: key);
+  PlayerSearcher({Key? key, required this.onSelect, required this.onCancel, required this.multiselect}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: 25, top: 25, bottom: 25, right: 20),
+      padding: const EdgeInsets.only(left: 20, top: 25, bottom: 15, right: 20),
       child: Column(
         children: [
           Row(
@@ -54,19 +56,50 @@ class PlayerSearcher extends StatelessWidget {
             ],
           ),
           Expanded(
-              child: StreamBuilder<List<Player>>(
-                  stream: Provider.of<PlayerDao>(context).watchAllPlayers(),
-                  builder: (context, snapshot) {
-                    final players = snapshot.data ?? [];
-                    return ListView(children: players.map((player) => Text(player.name)).toList());
-                  })),
+            child: StreamBuilder<List<Player>>(
+              stream: Provider.of<PlayerDao>(context).watchAllPlayers(),
+              builder: (context, snapshot) {
+                final players = snapshot.data ?? [];
+                return BlocBuilder<CurrentPlayerBloc, CurrentPlayerState>(
+                  builder: (context, state) {
+                    // TODO: Scroll to selected position
+                    return ListView.separated(
+                      padding: const EdgeInsets.only(top: 15),
+                      itemBuilder: (context, index) {
+                        bool isSelected = false;
+                        if (state is PlayerSelectedState) isSelected = players[index].id == state.player.id;
+
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 3.0),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10.0),
+                              color: Colors.blue.withOpacity(isSelected ? 0.15 : 0),
+                            ),
+                            child: PlayerListItem(
+                              player: players[index],
+                              onTap: (player) =>
+                                  BlocProvider.of<CurrentPlayerBloc>(context, listen: false).add(SetCurrentPlayer(player: player)),
+                            ),
+                          ),
+                        );
+                      },
+                      separatorBuilder: (_, __) => Divider(height: 0),
+                      itemCount: players.length,
+                    );
+                  },
+                );
+              },
+            ),
+          ),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              TextButton(child: Text('CANCEL'), onPressed: onOk),
-              TextButton(child: Text('OK'), onPressed: onCancel),
+              TextButton(child: Text('CANCEL'), onPressed: onCancel),
+              Padding(padding: const EdgeInsets.only(left: 15.0)),
+              TextButton(child: Text('SELECT'), onPressed: onSelect),
             ],
-          )
+          ),
         ],
       ),
     );

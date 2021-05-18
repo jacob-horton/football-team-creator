@@ -9,6 +9,7 @@ class Players extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get number => integer()();
   IntColumn get score => integer()();
+  // TODO: Fix spelling
   IntColumn get preferedPosition => integer()(); // 0 - defence, 1 - mid, 2 - attack
   TextColumn get name => text()();
   TextColumn get colour => text()(); // red, orange, green, blue, purple, pink
@@ -117,6 +118,6 @@ class CurrentPlayerDao extends DatabaseAccessor<AppDatabase> with _$CurrentPlaye
   }
 
   Future insertPlayer(Insertable<PlayerPosition> playerPosition) => into(playerPositions).insert(playerPosition);
-  Future updatePlayer(Insertable<PlayerPosition> playerPosition) => update(playerPositions).replace(playerPosition);
+  Future updatePlayer(Insertable<PlayerPosition> playerPosition) => update(playerPositions).replace(playerPosition); // TODO: Fix updating - problem because swapping players changes ID
   Future deletePlayer(Insertable<PlayerPosition> playerPosition) => delete(playerPositions).delete(playerPosition);
 }

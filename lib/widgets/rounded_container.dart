@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 class RoundedContainer extends StatelessWidget {
   final double height;
+  final double? width;
   final double horizontalPadding;
   final double borderRadius;
   final Color colour;
@@ -11,6 +12,7 @@ class RoundedContainer extends StatelessWidget {
     Key? key,
     required this.colour,
     required this.child,
+    this.width,
     this.height = 28.0,
     this.horizontalPadding = 10.0,
     this.borderRadius = 8.0,
@@ -20,6 +22,7 @@ class RoundedContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: height,
+      width: width,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(borderRadius),
         color: colour,

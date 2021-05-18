@@ -101,6 +101,20 @@ class FormationBloc extends Bloc<FormationEvent, FormationState> {
       }
     } else if (event is AddPlayer) {
       dao.insertPlayer(event.player);
+    } else if (event is SwapPlayer) {
+      final swapindex = state.teams[event.oldPlayer.position.team - 1].indexWhere((player) => player.player.id == event.oldPlayer.player.id);
+      final List<List<PlayerWithPosition>> newTeams = List.from(state.teams);
+      final List<PlayerWithPosition> newPlayers = List.from(state.teams[event.oldPlayer.position.team - 1]);
+
+      newPlayers[swapindex] = new PlayerWithPosition(player: event.newPlayer, position: event.oldPlayer.position);
+      newTeams[event.oldPlayer.position.team - 1] = newPlayers;
+
+      if (state is FormationFixed)
+        yield FormationFixed(formation: (state as FormationFixed).formation, teams: newTeams);
+      else
+        yield FormationCustom(teams: newTeams);
+
+      add(SaveFormation());
     }
   }
 }
