@@ -31,7 +31,7 @@ class PlayerDraggable extends StatelessWidget {
             new MaterialPageRoute(
               builder: (context) => PlayerSelector(
                 multiselect: false,
-                initialPlayer: playerWithPosition.player,
+                initialPlayers: [playerWithPosition.player],
               ),
             ),
           );

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:football/bloc/current_player/current_player_bloc.dart';
+import 'package:football/bloc/current_player/selected_player_bloc.dart';
 import 'package:football/bloc/formation/formation_bloc.dart';
 import 'package:football/data/moor_database.dart';
 import 'package:football/widgets/player_list_item.dart';
@@ -9,65 +9,71 @@ import 'package:provider/provider.dart';
 
 import 'input_box.dart';
 
-class PlayerSearcher extends StatelessWidget {
+class PlayerSearcher extends StatefulWidget {
+
+  @override
+  _PlayerSearcherState createState() => _PlayerSearcherState();
+
   final bool multiselect;
   final void Function() onSelect;
   final void Function() onCancel;
 
   PlayerSearcher({Key? key, required this.onSelect, required this.onCancel, required this.multiselect}) : super(key: key);
+}
+
+class _PlayerSearcherState extends State<PlayerSearcher> {
+  String searchValue = '';
 
   @override
+  // TODO: Maintain selection on saving player / creating new player
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(left: 20, top: 25, bottom: 15, right: 20),
-      child: Column(
-        children: [
-          Row(
+      child: BlocBuilder<SelectedPlayersBloc, SelectedPlayersState>(
+        builder: (context, state) {
+          return Column(
             children: [
-              Expanded(child: InputBox(hint: 'Search', icon: Icons.search)),
-              Padding(
-                padding: const EdgeInsets.only(left: 15),
-                child: GestureDetector(
-                  child: Icon(Icons.add),
-                  onTap: () async {
-                    int id = await Provider.of<PlayerDao>(context, listen: false).insertPlayer(
-                      PlayersCompanion(
-                        name: Value('Jacob Horton'),
-                        colour: Value('blue'),
-                        number: Value(2),
-                        score: Value(7),
-                        preferedPosition: Value(1),
-                      ),
-                    );
-                    // TODO: Do not add player to a team here
-                    BlocProvider.of<FormationBloc>(context, listen: false).add(
-                      AddPlayer(
-                        player: PlayerPositionsCompanion(
-                          playerId: Value(id),
-                          team: Value(2), // TODO: Assign team
-                          x: Value(100),
-                          y: Value(200),
-                        ),
-                      ),
-                    );
-                  },
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: InputBox(
+                      hint: 'Search',
+                      icon: Icons.search,
+                      onChanged: (value) => setState(() => searchValue = value),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 15),
+                    child: GestureDetector(
+                      child: Icon(Icons.add),
+                      onTap: () {
+                        // int id = await Provider.of<PlayerDao>(context, listen: false).insertPlayer(
+                        //   PlayersCompanion(
+                        //     name: Value('Jacob Horton'),
+                        //     colour: Value('blue'),
+                        //     number: Value(2),
+                        //     score: Value(7),
+                        //     preferedPosition: Value(1),
+                        //   ),
+                        // );
+                        BlocProvider.of<SelectedPlayersBloc>(context, listen: false).add(NewPlayer());
+                      },
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-          Expanded(
-            child: StreamBuilder<List<Player>>(
-              stream: Provider.of<PlayerDao>(context).watchAllPlayers(),
-              builder: (context, snapshot) {
-                final players = snapshot.data ?? [];
-                return BlocBuilder<CurrentPlayerBloc, CurrentPlayerState>(
-                  builder: (context, state) {
+              Expanded(
+                child: StreamBuilder<List<Player>>(
+                  stream: Provider.of<PlayerDao>(context).watchAllPlayers(nameFilter: searchValue),
+                  builder: (context, snapshot) {
+                    final players = snapshot.data ?? [];
                     // TODO: Scroll to selected position
                     return ListView.separated(
                       padding: const EdgeInsets.only(top: 15),
                       itemBuilder: (context, index) {
                         bool isSelected = false;
-                        if (state is PlayerSelectedState) isSelected = players[index].id == state.player.id;
+                        if (state is SingleSelectionState) isSelected = players[index].id == state.player.id;
+                        if (state is MultiSelectionState) isSelected = state.players.contains(players[index]);
 
                         return Padding(
                           padding: const EdgeInsets.symmetric(vertical: 3.0),
@@ -78,8 +84,17 @@ class PlayerSearcher extends StatelessWidget {
                             ),
                             child: PlayerListItem(
                               player: players[index],
-                              onTap: (player) =>
-                                  BlocProvider.of<CurrentPlayerBloc>(context, listen: false).add(SetCurrentPlayer(player: player)),
+                              onTap: (player) {
+                                SelectedPlayersEvent event;
+                                if (widget.multiselect) {
+                                  if (state is MultiSelectionState && state.players.contains(player))
+                                    event = RemoveSelectedPlayer(player: player);
+                                  else
+                                    event = AddSelectedPlayer(player: player);
+                                } else
+                                  event = SetSelectedPlayer(player: player);
+                                BlocProvider.of<SelectedPlayersBloc>(context, listen: false).add(event);
+                              },
                             ),
                           ),
                         );
@@ -88,20 +103,34 @@ class PlayerSearcher extends StatelessWidget {
                       itemCount: players.length,
                     );
                   },
-                );
-              },
-            ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton(child: Text('CANCEL'), onPressed: onCancel),
-              Padding(padding: const EdgeInsets.only(left: 15.0)),
-              TextButton(child: Text('SELECT'), onPressed: onSelect),
+                ),
+              ),
+              Row(
+                children: [
+                  _buildSelectButton(context, state),
+                  Expanded(child: Container()),
+                  TextButton(child: Text('CANCEL'), onPressed: widget.onCancel),
+                  Padding(padding: const EdgeInsets.only(left: 15.0)),
+                  TextButton(child: Text('SELECT'), onPressed: widget.onSelect),
+                ],
+              ),
             ],
-          ),
-        ],
+          );
+        },
       ),
     );
+  }
+
+  Widget _buildSelectButton(BuildContext context, SelectedPlayersState state) {
+    if (widget.multiselect) {
+      bool isAnythingSelected = state is MultiSelectionState && state.players.length != 0;
+      if (!isAnythingSelected) return Container();
+
+      return TextButton(
+        child: Text('DESELECT ALL'),
+        onPressed: () => BlocProvider.of<SelectedPlayersBloc>(context).add(ClearSelectedPlayer()),
+      );
+    } else
+      return Container();
   }
 }

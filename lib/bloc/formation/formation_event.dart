@@ -46,6 +46,15 @@ class AddPlayer extends FormationEvent {
   List<Object?> get props => [player];
 }
 
+class SetTeams extends FormationEvent {
+  final List<List<PlayerWithPosition>> teams;
+
+  SetTeams({required this.teams});
+
+  @override
+  List<Object?> get props => [teams];
+}
+
 class SwapPlayer extends FormationEvent {
   final PlayerWithPosition oldPlayer;
   final Player newPlayer;
@@ -54,6 +63,15 @@ class SwapPlayer extends FormationEvent {
 
   @override
   List<Object?> get props => [oldPlayer, newPlayer];
+}
+
+class ChangePlayerTeam extends FormationEvent {
+  final PlayerPosition playerPosition;
+
+  ChangePlayerTeam({required this.playerPosition});
+
+  @override
+  List<Object?> get props => [playerPosition];
 }
 
 class SaveFormation extends FormationEvent {}

@@ -61,8 +61,8 @@ class PlayerDao extends DatabaseAccessor<AppDatabase> with _$PlayerDaoMixin {
   PlayerDao(this.db) : super(db);
 
   Future<List<Player>> getAllPlayers() => select(players).get();
-  Stream<List<Player>> watchAllPlayers({bool sorted = true}) {
-    var selected = select(players);
+  Stream<List<Player>> watchAllPlayers({bool sorted = true, String nameFilter = ''}) {
+    var selected = select(players)..where((p) => p.name.like('%' + nameFilter + '%'));
 
     if (sorted) selected = selected..orderBy([(t) => OrderingTerm(expression: t.name)]);
     return selected.watch();
@@ -71,6 +71,8 @@ class PlayerDao extends DatabaseAccessor<AppDatabase> with _$PlayerDaoMixin {
   Future<int> insertPlayer(Insertable<Player> player) => into(players).insert(player);
   Future updatePlayer(Insertable<Player> player) => update(players).replace(player);
   Future deletePlayer(Insertable<Player> player) => delete(players).delete(player);
+
+  Future<Player> getPlayer(int id) => (select(players)..where((p) => p.id.equals(id))).getSingle();
 }
 
 @UseDao(tables: [PlayerPositions, Players])
@@ -118,6 +120,7 @@ class CurrentPlayerDao extends DatabaseAccessor<AppDatabase> with _$CurrentPlaye
   }
 
   Future insertPlayer(Insertable<PlayerPosition> playerPosition) => into(playerPositions).insert(playerPosition);
-  Future updatePlayer(Insertable<PlayerPosition> playerPosition) => update(playerPositions).replace(playerPosition); // TODO: Fix updating - problem because swapping players changes ID
+  Future updatePlayer(Insertable<PlayerPosition> playerPosition) =>
+      update(playerPositions).replace(playerPosition); // TODO: Fix updating - problem because swapping players changes ID
   Future deletePlayer(Insertable<PlayerPosition> playerPosition) => delete(playerPositions).delete(playerPosition);
 }

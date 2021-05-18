@@ -115,6 +115,26 @@ class FormationBloc extends Bloc<FormationEvent, FormationState> {
         yield FormationCustom(teams: newTeams);
 
       add(SaveFormation());
+    } else if (event is SetTeams) {
+      if (state is FormationFixed)
+        yield FormationFixed(formation: (state as FormationFixed).formation, teams: event.teams);
+      else
+        yield FormationCustom(teams: event.teams);
+
+      add(SaveFormation());
+    } else if (event is ChangePlayerTeam) {
+      final oldTeam = event.playerPosition.team;
+      final newTeam = oldTeam == 1 ? 2 : 1;
+
+      final playerToUpdate = state.teams[oldTeam - 1].firstWhere((player) => player.player.id == event.playerPosition.playerId);
+      final newPlayer = PlayerWithPosition(player: playerToUpdate.player, position: playerToUpdate.position.copyWith(team: newTeam));
+      final List<List<PlayerWithPosition>> newTeams = [List.from(state.teams[0]), List.from(state.teams[1])];
+
+      newTeams[oldTeam - 1].remove(playerToUpdate);
+      newTeams[newTeam - 1].add(newPlayer);
+
+      dao.updatePlayer(playerToUpdate.position.copyWith(team: newTeam));
+      add(SetTeams(teams: newTeams));
     }
   }
 }

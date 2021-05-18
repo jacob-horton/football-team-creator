@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 class InputBox extends StatelessWidget {
   final IconData? icon;
   final String? hint;
+  final Function(String)? onChanged;
   final TextEditingController? controller;
 
-  const InputBox({Key? key, this.hint, this.icon, this.controller}) : super(key: key);
+  const InputBox({Key? key, this.hint, this.icon, this.controller, this.onChanged}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -26,6 +27,7 @@ class InputBox extends StatelessWidget {
               : Container(),
           Expanded(
             child: TextFormField(
+              onChanged: onChanged,
               controller: controller,
               style: Theme.of(context).textTheme.bodyText2?.copyWith(fontSize: 20.0),
               decoration: InputDecoration(
