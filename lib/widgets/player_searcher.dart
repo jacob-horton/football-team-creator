@@ -10,7 +10,6 @@ import 'package:provider/provider.dart';
 import 'input_box.dart';
 
 class PlayerSearcher extends StatefulWidget {
-
   @override
   _PlayerSearcherState createState() => _PlayerSearcherState();
 
@@ -46,18 +45,7 @@ class _PlayerSearcherState extends State<PlayerSearcher> {
                     padding: const EdgeInsets.only(left: 15),
                     child: GestureDetector(
                       child: Icon(Icons.add),
-                      onTap: () {
-                        // int id = await Provider.of<PlayerDao>(context, listen: false).insertPlayer(
-                        //   PlayersCompanion(
-                        //     name: Value('Jacob Horton'),
-                        //     colour: Value('blue'),
-                        //     number: Value(2),
-                        //     score: Value(7),
-                        //     preferedPosition: Value(1),
-                        //   ),
-                        // );
-                        BlocProvider.of<SelectedPlayersBloc>(context, listen: false).add(NewPlayer());
-                      },
+                      onTap: () => BlocProvider.of<SelectedPlayersBloc>(context, listen: false).add(NewPlayer()),
                     ),
                   ),
                 ],

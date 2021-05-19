@@ -46,6 +46,16 @@ class AddPlayer extends FormationEvent {
   List<Object?> get props => [player];
 }
 
+class RemovePlayer extends FormationEvent {
+  final Player player;
+
+  RemovePlayer({required this.player});
+
+  @override
+  List<Object?> get props => [player];
+}
+
+
 class SetTeams extends FormationEvent {
   final List<List<PlayerWithPosition>> teams;
 

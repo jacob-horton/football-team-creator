@@ -20,8 +20,10 @@ class PlayerEditor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // TODO: fix selection when adding new players
     return BlocBuilder<SelectedPlayersBloc, SelectedPlayersState>(
       builder: (context, state) {
+        _clearFields();
         if (state is SingleSelectionState || (state is MultiSelectionState && state.selected != null)) {
           Player player = (state is SingleSelectionState) ? state.player : (state as MultiSelectionState).selected as Player;
 
@@ -37,7 +39,15 @@ class PlayerEditor extends StatelessWidget {
                   preferedPosition: int.parse(preferredPositionController.text),
                 ),
               );
+              _clearFields();
               BlocProvider.of<FormationBloc>(context, listen: false).add(LoadPositions());
+            },
+            onDelete: () {
+              // TODO: Need to delete player from team before deleting from database
+              Provider.of<PlayerDao>(context, listen: false).deletePlayer(player);
+              BlocProvider.of<FormationBloc>(context, listen: false).add(RemovePlayer(player: player));
+              BlocProvider.of<SelectedPlayersBloc>(context, listen: false).add(ClearSelectedPlayer());
+              Provider.of<PlayerDao>(context, listen: false).deletePlayer(player);
             },
             name: player.name,
             colour: player.colour,
@@ -59,7 +69,7 @@ class PlayerEditor extends StatelessWidget {
                   preferedPosition: Value(int.parse(preferredPositionController.text)),
                 ),
               );
-              
+
               BlocProvider.of<FormationBloc>(context, listen: false).add(LoadPositions());
               BlocProvider.of<SelectedPlayersBloc>(context, listen: false).add(AddSelectedPlayer(player: await playerDao.getPlayer(id)));
             },
@@ -70,8 +80,24 @@ class PlayerEditor extends StatelessWidget {
     );
   }
 
-  Padding _buildEditor(BuildContext context,
-      {required Function() onSave, String? colour, String? name, int? number, int? score, int? preferredPosition}) {
+  _clearFields() {
+    nameController.clear();
+    scoreController.clear();
+    colourController.clear();
+    numberController.clear();
+    preferredPositionController.clear();
+  }
+
+  Padding _buildEditor(
+    BuildContext context, {
+    required Function() onSave,
+    Function()? onDelete,
+    String? colour,
+    String? name,
+    int? number,
+    int? score,
+    int? preferredPosition,
+  }) {
     if (name != null) nameController.text = name;
     if (number != null) numberController.text = number.toString();
     if (score != null) scoreController.text = score.toString();
@@ -95,14 +121,20 @@ class PlayerEditor extends StatelessWidget {
           ),
           Padding(padding: const EdgeInsets.only(top: 5.0)),
           Expanded(child: _buildField('Preferred Position', preferredPositionController)), // TODO: Make dropdown
-          Expanded(
-            child: Align(
-              alignment: Alignment.bottomRight,
-              child: TextButton(
+          Row(
+            children: [
+              onDelete == null
+                  ? Container()
+                  : TextButton(
+                      child: Text('DELETE'),
+                      onPressed: onDelete,
+                    ),
+              Expanded(child: Container()),
+              TextButton(
                 child: Text('SAVE'),
                 onPressed: onSave,
               ),
-            ),
+            ],
           ),
         ],
       ),

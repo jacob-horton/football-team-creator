@@ -13,6 +13,7 @@ part 'formation_state.dart';
 
 class FormationBloc extends Bloc<FormationEvent, FormationState> {
   final CurrentPlayerDao dao;
+  // TODO: Use team number, not lists - this should fix teams not saving 🤞
   FormationBloc({required this.dao}) : super(FormationCustom(teams: [[], []])) {
     add(LoadPositions());
   }
@@ -102,11 +103,12 @@ class FormationBloc extends Bloc<FormationEvent, FormationState> {
     } else if (event is AddPlayer) {
       dao.insertPlayer(event.player);
     } else if (event is SwapPlayer) {
-      final swapindex = state.teams[event.oldPlayer.position.team - 1].indexWhere((player) => player.player.id == event.oldPlayer.player.id);
+      // TODO: Error swapping player when duplicate player in team
+      final swapIndex = state.teams[event.oldPlayer.position.team - 1].indexWhere((player) => player.player.id == event.oldPlayer.player.id);
       final List<List<PlayerWithPosition>> newTeams = List.from(state.teams);
       final List<PlayerWithPosition> newPlayers = List.from(state.teams[event.oldPlayer.position.team - 1]);
 
-      newPlayers[swapindex] = new PlayerWithPosition(player: event.newPlayer, position: event.oldPlayer.position);
+      newPlayers[swapIndex] = new PlayerWithPosition(player: event.newPlayer, position: event.oldPlayer.position);
       newTeams[event.oldPlayer.position.team - 1] = newPlayers;
 
       if (state is FormationFixed)
@@ -134,6 +136,22 @@ class FormationBloc extends Bloc<FormationEvent, FormationState> {
       newTeams[newTeam - 1].add(newPlayer);
 
       dao.updatePlayer(playerToUpdate.position.copyWith(team: newTeam));
+      add(SetTeams(teams: newTeams));
+    } else if (event is RemovePlayer) {
+      final List<List<PlayerWithPosition>> newTeams = [List.from(state.teams[0]), List.from(state.teams[1])];
+
+      bool removed = false;
+      for (final team in newTeams) {
+        for (final player in team)
+          if (player.player.id == event.player.id) {
+            team.remove(player);
+            removed = true;
+            break;
+          }
+          if (removed) break;
+      }
+
+      dao.deletePlayerFromID(event.player.id);
       add(SetTeams(teams: newTeams));
     }
   }

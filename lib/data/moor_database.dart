@@ -122,5 +122,7 @@ class CurrentPlayerDao extends DatabaseAccessor<AppDatabase> with _$CurrentPlaye
   Future insertPlayer(Insertable<PlayerPosition> playerPosition) => into(playerPositions).insert(playerPosition);
   Future updatePlayer(Insertable<PlayerPosition> playerPosition) =>
       update(playerPositions).replace(playerPosition); // TODO: Fix updating - problem because swapping players changes ID
+
   Future deletePlayer(Insertable<PlayerPosition> playerPosition) => delete(playerPositions).delete(playerPosition);
+  Future deletePlayerFromID(int id) => (delete(playerPositions)..where((p) => p.playerId.equals(id))).go();
 }
