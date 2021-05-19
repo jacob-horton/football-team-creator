@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:football/bloc/current_player/selected_player_bloc.dart';
+import 'package:football/bloc/selected_player/selected_player_bloc.dart';
 import 'package:football/bloc/formation/formation_bloc.dart';
 import 'package:football/data/moor_database.dart';
 import 'package:moor/moor.dart' hide Column;
@@ -24,55 +24,37 @@ class PlayerEditor extends StatelessWidget {
     return BlocBuilder<SelectedPlayersBloc, SelectedPlayersState>(
       builder: (context, state) {
         _clearFields();
-        if (state is SingleSelectionState || (state is MultiSelectionState && state.selected != null)) {
-          Player player = (state is SingleSelectionState) ? state.player : (state as MultiSelectionState).selected as Player;
 
+        if (!(state is PlayerUnselectedState)) {
           return _buildEditor(
             context,
-            onSave: () {
-              Provider.of<PlayerDao>(context, listen: false).updatePlayer(
-                player.copyWith(
-                  colour: colourController.text,
-                  name: nameController.text,
-                  number: int.parse(numberController.text),
-                  score: int.parse(scoreController.text),
-                  preferedPosition: int.parse(preferredPositionController.text),
-                ),
+            state: state,
+            onSave: () async {
+              // TODO: Move updating to bloc
+              final player = PlayersCompanion(
+                id: state.selectedPlayer?.id == null ? Value.absent() : Value(state.selectedPlayer?.id as int),
+                colour: state.selectedPlayer?.colour == null ? Value.absent() : Value(state.selectedPlayer?.colour as String),
+                name: state.selectedPlayer?.name == null ? Value.absent() : Value(state.selectedPlayer?.name as String),
+                number: state.selectedPlayer?.number == null ? Value.absent() : Value(state.selectedPlayer?.number as int),
+                score: state.selectedPlayer?.score == null ? Value.absent() : Value(state.selectedPlayer?.score as int),
+                preferedPosition:
+                    state.selectedPlayer?.preferredPosition == null ? Value.absent() : Value(state.selectedPlayer?.preferredPosition as int),
               );
-              _clearFields();
+
+              if (state is NewPlayerState) {
+                int id = await Provider.of<PlayerDao>(context, listen: false).insertPlayer(player);
+                state.selectedPlayer?.id = id;
+              } else
+                Provider.of<PlayerDao>(context, listen: false).updatePlayer(player);
               BlocProvider.of<FormationBloc>(context, listen: false).add(LoadPositions());
             },
             onDelete: () {
               // TODO: Need to delete player from team before deleting from database
-              Provider.of<PlayerDao>(context, listen: false).deletePlayer(player);
-              BlocProvider.of<FormationBloc>(context, listen: false).add(RemovePlayer(player: player));
+              Provider.of<PlayerDao>(context, listen: false).deletePlayerFromID(state.selectedPlayer?.id as int);
+              BlocProvider.of<FormationBloc>(context, listen: false).add(RemovePlayer(player: state.selectedPlayer?.toPlayer() as Player));
               BlocProvider.of<SelectedPlayersBloc>(context, listen: false).add(ClearSelectedPlayer());
-              Provider.of<PlayerDao>(context, listen: false).deletePlayer(player);
             },
-            name: player.name,
-            colour: player.colour,
-            number: player.number,
-            score: player.score,
-            preferredPosition: player.preferedPosition,
-          );
-        } else if (state is NewPlayerState) {
-          return _buildEditor(
-            context,
-            onSave: () async {
-              final playerDao = Provider.of<PlayerDao>(context, listen: false);
-              final id = await playerDao.insertPlayer(
-                PlayersCompanion(
-                  colour: Value(colourController.text),
-                  name: Value(nameController.text),
-                  number: Value(int.parse(numberController.text)),
-                  score: Value(int.parse(scoreController.text)),
-                  preferedPosition: Value(int.parse(preferredPositionController.text)),
-                ),
-              );
-
-              BlocProvider.of<FormationBloc>(context, listen: false).add(LoadPositions());
-              BlocProvider.of<SelectedPlayersBloc>(context, listen: false).add(AddSelectedPlayer(player: await playerDao.getPlayer(id)));
-            },
+            player: state.selectedPlayer as EditablePlayer,
           );
         } else
           return Center(child: Text('Player not selected', style: Theme.of(context).textTheme.caption));
@@ -90,37 +72,59 @@ class PlayerEditor extends StatelessWidget {
 
   Padding _buildEditor(
     BuildContext context, {
+    required SelectedPlayersState state,
     required Function() onSave,
+    required EditablePlayer player,
     Function()? onDelete,
-    String? colour,
-    String? name,
-    int? number,
-    int? score,
-    int? preferredPosition,
   }) {
-    if (name != null) nameController.text = name;
-    if (number != null) numberController.text = number.toString();
-    if (score != null) scoreController.text = score.toString();
-    if (preferredPosition != null) preferredPositionController.text = preferredPosition.toString();
+    _updateController(nameController, player.name);
+    _updateController(colourController, player.colour);
+    _updateController(scoreController, player.score);
+    _updateController(numberController, player.number);
+    _updateController(preferredPositionController, player.preferredPosition);
 
     return Padding(
       padding: const EdgeInsets.all(15.0),
       child: Column(
         children: [
           Padding(padding: const EdgeInsets.only(top: 10.0)),
-          ColourPicker(colour: colour, controller: colourController),
+          ColourPicker(state: state),
           Padding(padding: const EdgeInsets.only(top: 25.0)),
-          _buildField('Name', nameController),
+          _buildField(
+            'Name',
+            nameController,
+            (name) => // nameController.text = name,
+                BlocProvider.of<SelectedPlayersBloc>(context)
+                    .add(SetSelectedPlayer(player: state.selectedPlayer?.copyWith(name: name) as EditablePlayer)),
+          ),
           Padding(padding: const EdgeInsets.only(top: 5.0)),
           Row(
             children: [
-              Expanded(child: _buildField('Number', numberController)), // TODO: Only accept numbers
+              Expanded(
+                child: _buildField(
+                    'Number',
+                    numberController,
+                    (number) => BlocProvider.of<SelectedPlayersBloc>(context)
+                        .add(SetSelectedPlayer(player: state.selectedPlayer?.copyWith(number: int.parse(number)) as EditablePlayer))),
+              ), // TODO: Only accept numbers
               Padding(padding: const EdgeInsets.only(left: 20.0)),
-              Expanded(child: _buildField('Score', scoreController)), // TODO: Only accept numbers
+              Expanded(
+                child: _buildField(
+                    'Score',
+                    scoreController,
+                    (score) => BlocProvider.of<SelectedPlayersBloc>(context)
+                        .add(SetSelectedPlayer(player: state.selectedPlayer?.copyWith(score: int.parse(score)) as EditablePlayer))),
+              ), // TODO: Only accept numbers
             ],
           ),
           Padding(padding: const EdgeInsets.only(top: 5.0)),
-          Expanded(child: _buildField('Preferred Position', preferredPositionController)), // TODO: Make dropdown
+          Expanded(
+            child: _buildField(
+                'Preferred Position',
+                preferredPositionController,
+                (preferredPosition) => BlocProvider.of<SelectedPlayersBloc>(context).add(
+                    SetSelectedPlayer(player: state.selectedPlayer?.copyWith(preferredPosition: int.parse(preferredPosition)) as EditablePlayer))),
+          ), // TODO: Make dropdown
           Row(
             children: [
               onDelete == null
@@ -141,7 +145,7 @@ class PlayerEditor extends StatelessWidget {
     );
   }
 
-  Widget _buildField(String hint, TextEditingController controller) {
+  Widget _buildField(String hint, TextEditingController controller, Function(String) onChanged) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -149,8 +153,24 @@ class PlayerEditor extends StatelessWidget {
           padding: const EdgeInsets.all(5.0),
           child: Text(hint),
         ),
-        InputBox(controller: controller),
+        InputBox(controller: controller, onChanged: onChanged),
       ],
+    );
+  }
+
+  _updateController(TextEditingController controller, Object? newValue, {bool clearIfNull = false}) {
+    if (newValue == null) {
+      if (clearIfNull)
+        newValue = '';
+      else
+        return;
+    }
+
+    controller.value = TextEditingValue(
+      text: newValue.toString(),
+      selection: TextSelection.fromPosition(
+        TextPosition(offset: newValue.toString().length),
+      ),
     );
   }
 }

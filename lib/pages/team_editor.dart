@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:football/bloc/formation/formation_bloc.dart';
+import 'package:football/bloc/selected_player/selected_player_bloc.dart';
 import 'package:football/data/moor_database.dart';
 import 'package:football/pages/player_selector.dart';
 import 'package:football/utils/navigation.dart';
@@ -44,7 +45,8 @@ class TeamEditor extends StatelessWidget {
                           ),
                         ),
                       );
-                      if (newPlayers is List<Player>) _suffleTeams2(state, context, newPlayers);
+                      if (newPlayers is List<EditablePlayer>) _suffleTeams2(state, context, newPlayers.map<Player>((p) => p.toPlayer() as Player).toList());
+                      else if (newPlayers is EditablePlayer) _suffleTeams2(state, context, [newPlayers.toPlayer() as Player]);
                     },
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -207,7 +209,8 @@ class TeamEditor extends StatelessWidget {
                         ),
                       );
 
-                      if (newPlayer is Player) BlocProvider.of<FormationBloc>(context).add(SwapPlayer(oldPlayer: player, newPlayer: newPlayer));
+                      if (newPlayer is EditablePlayer)
+                        BlocProvider.of<FormationBloc>(context).add(SwapPlayer(oldPlayer: player, newPlayer: newPlayer.toPlayer() as Player));
                     },
                   );
 

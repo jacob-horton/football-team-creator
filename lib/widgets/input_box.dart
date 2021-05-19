@@ -6,7 +6,7 @@ class InputBox extends StatelessWidget {
   final Function(String)? onChanged;
   final TextEditingController? controller;
 
-  const InputBox({Key? key, this.hint, this.icon, this.controller, this.onChanged}) : super(key: key);
+  InputBox({Key? key, this.hint, this.icon, this.onChanged, this.controller}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

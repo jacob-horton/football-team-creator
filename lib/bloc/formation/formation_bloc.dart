@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
+import 'package:football/bloc/selected_player/selected_player_bloc.dart';
 import 'package:football/data/moor_database.dart';
 import 'package:football/widgets/player_draggable.dart';
 import 'package:meta/meta.dart';

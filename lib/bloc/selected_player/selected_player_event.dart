@@ -8,7 +8,7 @@ abstract class SelectedPlayersEvent extends Equatable {
 }
 
 class SetSelectedPlayer extends SelectedPlayersEvent {
-  final Player player;
+  final EditablePlayer player;
 
   SetSelectedPlayer({required this.player});
 
@@ -17,7 +17,7 @@ class SetSelectedPlayer extends SelectedPlayersEvent {
 }
 
 class AddSelectedPlayer extends SelectedPlayersEvent {
-  final Player player;
+  final EditablePlayer player;
 
   AddSelectedPlayer({required this.player});
 
@@ -26,9 +26,18 @@ class AddSelectedPlayer extends SelectedPlayersEvent {
 }
 
 class RemoveSelectedPlayer extends SelectedPlayersEvent {
-  final Player player;
+  final EditablePlayer player;
 
   RemoveSelectedPlayer({required this.player});
+
+  @override
+  List<Object> get props => [player];
+}
+
+class UpdateSelectedPlayer extends SelectedPlayersEvent {
+  final EditablePlayer player;
+
+  UpdateSelectedPlayer({required this.player});
 
   @override
   List<Object> get props => [player];

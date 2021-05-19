@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:football/bloc/current_player/selected_player_bloc.dart';
-import 'package:football/bloc/formation/formation_bloc.dart';
+import 'package:football/bloc/selected_player/selected_player_bloc.dart';
 import 'package:football/data/moor_database.dart';
 import 'package:football/widgets/player_list_item.dart';
-import 'package:moor/moor.dart' hide Column;
 import 'package:provider/provider.dart';
 
 import 'input_box.dart';
@@ -60,8 +58,9 @@ class _PlayerSearcherState extends State<PlayerSearcher> {
                       padding: const EdgeInsets.only(top: 15),
                       itemBuilder: (context, index) {
                         bool isSelected = false;
-                        if (state is SingleSelectionState) isSelected = players[index].id == state.player.id;
-                        if (state is MultiSelectionState) isSelected = state.players.contains(players[index]);
+                        if (state is SingleSelectionState) isSelected = players[index].id == state.selectedPlayer?.id;
+                        if (state is NewPlayerState) isSelected = players[index].id == state.selectedPlayer?.id;
+                        else if (state is MultiSelectionState) isSelected = state.players.any((player) => player.id == players[index].id);
 
                         return Padding(
                           padding: const EdgeInsets.symmetric(vertical: 3.0),
@@ -72,10 +71,11 @@ class _PlayerSearcherState extends State<PlayerSearcher> {
                             ),
                             child: PlayerListItem(
                               player: players[index],
-                              onTap: (player) {
+                              onTap: (p) {
+                                EditablePlayer player = EditablePlayer.fromPlayer(p);
                                 SelectedPlayersEvent event;
                                 if (widget.multiselect) {
-                                  if (state is MultiSelectionState && state.players.contains(player))
+                                  if (state is MultiSelectionState && state.players.any((p) => p.id == player.id))
                                     event = RemoveSelectedPlayer(player: player);
                                   else
                                     event = AddSelectedPlayer(player: player);

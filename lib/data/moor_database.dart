@@ -64,13 +64,14 @@ class PlayerDao extends DatabaseAccessor<AppDatabase> with _$PlayerDaoMixin {
   Stream<List<Player>> watchAllPlayers({bool sorted = true, String nameFilter = ''}) {
     var selected = select(players)..where((p) => p.name.like('%' + nameFilter + '%'));
 
-    if (sorted) selected = selected..orderBy([(t) => OrderingTerm(expression: t.name)]);
+    if (sorted) selected = selected..orderBy([(t) => OrderingTerm(expression: t.name.lower())]);
     return selected.watch();
   }
 
   Future<int> insertPlayer(Insertable<Player> player) => into(players).insert(player);
   Future updatePlayer(Insertable<Player> player) => update(players).replace(player);
   Future deletePlayer(Insertable<Player> player) => delete(players).delete(player);
+  Future deletePlayerFromID(int id) => (delete(players)..where((p) => p.id.equals(id))).go();
 
   Future<Player> getPlayer(int id) => (select(players)..where((p) => p.id.equals(id))).getSingle();
 }
