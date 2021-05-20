@@ -2,23 +2,23 @@ part of 'formation_bloc.dart';
 
 @immutable
 abstract class FormationState extends Equatable {
-  final List<List<PlayerWithPosition>> teams;
+  final List<PlayerWithPosition> players;
 
-  FormationState({required this.teams});
+  FormationState({required this.players});
 
   @override
-  List<Object?> get props => [teams];
+  List<Object?> get props => [players];
 }
 
 class FormationFixed extends FormationState {
   final List<int> formation;
 
-  FormationFixed({required this.formation, required List<List<PlayerWithPosition>> teams}) : super(teams: teams);
+  FormationFixed({required this.formation, required List<PlayerWithPosition> players}) : super(players: players);
 
   @override
-  List<Object?> get props => [formation, teams];
+  List<Object?> get props => [formation, players];
 }
 
 class FormationCustom extends FormationState {
-  FormationCustom({required List<List<PlayerWithPosition>> teams}) : super(teams: teams);
+  FormationCustom({required List<PlayerWithPosition> players}) : super(players: players);
 }

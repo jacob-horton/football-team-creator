@@ -101,6 +101,25 @@ class CurrentPlayerDao extends DatabaseAccessor<AppDatabase> with _$CurrentPlaye
         .watch();
   }
 
+  Future<List<PlayerWithPosition>> getAllPlayers() {
+    return select(playerPositions)
+        .join(
+          [
+            leftOuterJoin(
+              players,
+              players.id.equalsExp(playerPositions.playerId),
+            ),
+          ],
+        )
+        .map(
+          (row) => PlayerWithPosition(
+            player: row.readTable(players),
+            position: row.readTable(playerPositions),
+          ),
+        )
+        .get();
+  }
+
   Future<List<PlayerWithPosition>> getPlayersOnTeam(int team) {
     return (select(playerPositions)..where((t) => t.team.equals(team)))
         .join(
@@ -126,4 +145,6 @@ class CurrentPlayerDao extends DatabaseAccessor<AppDatabase> with _$CurrentPlaye
 
   Future deletePlayer(Insertable<PlayerPosition> playerPosition) => delete(playerPositions).delete(playerPosition);
   Future deletePlayerFromID(int id) => (delete(playerPositions)..where((p) => p.playerId.equals(id))).go();
+
+  Future removeAllPlayers() => delete(playerPositions).go();
 }

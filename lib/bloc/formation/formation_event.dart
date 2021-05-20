@@ -1,5 +1,6 @@
 part of 'formation_bloc.dart';
 
+// TODO: rename classes to now use 'player' not 'team'
 @immutable
 abstract class FormationEvent extends Equatable {
   @override
@@ -55,14 +56,13 @@ class RemovePlayer extends FormationEvent {
   List<Object?> get props => [player];
 }
 
-
 class SetTeams extends FormationEvent {
-  final List<List<PlayerWithPosition>> teams;
+  final List<PlayerWithPosition> players;
 
-  SetTeams({required this.teams});
+  SetTeams({required this.players});
 
   @override
-  List<Object?> get props => [teams];
+  List<Object?> get props => [players];
 }
 
 class SwapPlayer extends FormationEvent {
@@ -85,3 +85,12 @@ class ChangePlayerTeam extends FormationEvent {
 }
 
 class SaveFormation extends FormationEvent {}
+
+class ShufflePlayers extends FormationEvent {
+  final List<Player>? players;
+
+  ShufflePlayers({this.players});
+
+  @override
+  List<Object?> get props => [players];
+}

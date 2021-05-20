@@ -1,9 +1,9 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
-import 'package:football/bloc/selected_player/selected_player_bloc.dart';
 import 'package:football/data/moor_database.dart';
 import 'package:football/widgets/player_draggable.dart';
 import 'package:meta/meta.dart';
@@ -13,9 +13,10 @@ part 'formation_event.dart';
 part 'formation_state.dart';
 
 class FormationBloc extends Bloc<FormationEvent, FormationState> {
+  final Random rand = Random();
+
   final CurrentPlayerDao dao;
-  // TODO: Use team number, not lists - this should fix teams not saving 🤞
-  FormationBloc({required this.dao}) : super(FormationCustom(teams: [[], []])) {
+  FormationBloc({required this.dao}) : super(FormationCustom(players: [])) {
     add(LoadPositions());
   }
 
@@ -24,34 +25,30 @@ class FormationBloc extends Bloc<FormationEvent, FormationState> {
     FormationEvent event,
   ) async* {
     if (event is LoadPositions) {
-      final teams = [await dao.getPlayersOnTeam(1), await dao.getPlayersOnTeam(2)];
-      yield FormationCustom(teams: teams);
+      final players = await dao.getAllPlayers();
+      yield FormationCustom(players: players);
     } else if (event is SetCustomFormation) {
-      final List<List<PlayerWithPosition>> teams = List.from(state.teams);
-      teams[event.team - 1] = event.players ?? teams[event.team - 1];
-
-      yield FormationCustom(teams: teams);
+      yield FormationCustom(players: state.players);
     } else if (event is SetFixedFormation) {
       const double border = 50;
-      Offset windowSize = (event.windowSize - Size(border * 2, border * 2)) as Offset;
+      final Offset windowSize = (event.windowSize - Size(border * 2, border * 2)) as Offset;
       final horizontalSpacing = windowSize.dx / event.formation.length.toDouble();
 
-      List<PlayerWithPosition> newPositions = [];
+      final List<PlayerWithPosition> newPositions = List.from(state.players);
+      final playersOnTeam = state.players.where((player) => player.position.team == event.team).toList();
+
       int index = 0;
       for (int i = 0; i < event.formation.length; i++) {
         final verticalSpacing = windowSize.dy / event.formation[i].toDouble();
         for (int j = 0; j < event.formation[i]; j++) {
           // TODO: Get random player with correct preferred position
-          // TODO: split into teams
-          final player = state.teams[event.team - 1][index];
+          final player = playersOnTeam[index];
 
-          newPositions.add(
-            PlayerWithPosition(
-              player: player.player,
-              position: player.position.copyWith(
-                x: horizontalSpacing * i + horizontalSpacing / 2 - PlayerDraggable.size / 2 + border,
-                y: verticalSpacing * j + verticalSpacing / 2 - PlayerDraggable.size / 2 + border,
-              ),
+          newPositions[newPositions.indexOf(player)] = PlayerWithPosition(
+            player: player.player,
+            position: player.position.copyWith(
+              x: horizontalSpacing * i + horizontalSpacing / 2 - PlayerDraggable.size / 2 + border,
+              y: verticalSpacing * j + verticalSpacing / 2 - PlayerDraggable.size / 2 + border,
             ),
           );
 
@@ -59,101 +56,124 @@ class FormationBloc extends Bloc<FormationEvent, FormationState> {
         }
       }
 
-      final List<List<PlayerWithPosition>> teams = List.from(state.teams);
-      teams[event.team - 1] = newPositions;
-
-      yield FormationFixed(formation: event.formation, teams: teams);
+      yield FormationFixed(formation: event.formation, players: newPositions);
       add(SaveFormation());
     } else if (event is SetPlayerPosition) {
-      PlayerWithPosition? playerToChange;
-      bool found = false;
+      int index = state.players.indexWhere((player) => player.player.id == event.playerPosition.playerId);
 
-      int teamIndex = 0;
-      int playerIndex = 0;
-      for (teamIndex = 0; teamIndex < state.teams.length; teamIndex++) {
-        for (playerIndex = 0; playerIndex < state.teams[teamIndex].length; playerIndex++) {
-          if (state.teams[teamIndex][playerIndex].player.id == event.playerPosition.playerId) {
-            playerToChange = state.teams[teamIndex][playerIndex];
-            found = true;
-            break;
-          }
-        }
-        if (found) break;
-      }
-
-      if (playerToChange == null) return; // TODO: Handle null player
-      final newPositions = List<PlayerWithPosition>.from(state.teams[teamIndex]);
-      newPositions[playerIndex] = PlayerWithPosition(
-        player: playerToChange.player,
-        position: playerToChange.position.copyWith(
+      final newPositions = List<PlayerWithPosition>.from(state.players);
+      newPositions[index] = PlayerWithPosition(
+        player: state.players[index].player,
+        position: state.players[index].position.copyWith(
           x: event.playerPosition.x,
           y: event.playerPosition.y,
         ),
       );
 
-      final List<List<PlayerWithPosition>> teams = List.from(state.teams);
-      teams[teamIndex] = newPositions;
-
-      yield FormationCustom(teams: teams);
+      yield FormationCustom(players: newPositions);
     } else if (event is SaveFormation) {
-      for (final team in state.teams) {
-        for (final player in team) {
-          dao.updatePlayer(player.position);
-        }
+      dao.removeAllPlayers();
+      for (final player in state.players) {
+        dao.insertPlayer(player.position);
       }
     } else if (event is AddPlayer) {
       dao.insertPlayer(event.player);
     } else if (event is SwapPlayer) {
       // TODO: Error swapping player when duplicate player in team
-      final swapIndex = state.teams[event.oldPlayer.position.team - 1].indexWhere((player) => player.player.id == event.oldPlayer.player.id);
-      final List<List<PlayerWithPosition>> newTeams = List.from(state.teams);
-      final List<PlayerWithPosition> newPlayers = List.from(state.teams[event.oldPlayer.position.team - 1]);
-
-      newPlayers[swapIndex] = new PlayerWithPosition(player: event.newPlayer, position: event.oldPlayer.position);
-      newTeams[event.oldPlayer.position.team - 1] = newPlayers;
+      final swapIndex = state.players.indexWhere((player) => player.player.id == event.oldPlayer.player.id);
+      final List<PlayerWithPosition> newPositions = List.from(state.players);
+      newPositions[swapIndex] = new PlayerWithPosition(player: event.newPlayer, position: event.oldPlayer.position);
 
       if (state is FormationFixed)
-        yield FormationFixed(formation: (state as FormationFixed).formation, teams: newTeams);
+        yield FormationFixed(formation: (state as FormationFixed).formation, players: newPositions);
       else
-        yield FormationCustom(teams: newTeams);
+        yield FormationCustom(players: newPositions);
 
       add(SaveFormation());
     } else if (event is SetTeams) {
       if (state is FormationFixed)
-        yield FormationFixed(formation: (state as FormationFixed).formation, teams: event.teams);
+        yield FormationFixed(formation: (state as FormationFixed).formation, players: event.players);
       else
-        yield FormationCustom(teams: event.teams);
+        yield FormationCustom(players: event.players);
 
       add(SaveFormation());
     } else if (event is ChangePlayerTeam) {
+      // TODO: Is there a more efficient way
       final oldTeam = event.playerPosition.team;
       final newTeam = oldTeam == 1 ? 2 : 1;
 
-      final playerToUpdate = state.teams[oldTeam - 1].firstWhere((player) => player.player.id == event.playerPosition.playerId);
+      final playerToUpdate = state.players.firstWhere((player) => player.player.id == event.playerPosition.playerId);
       final newPlayer = PlayerWithPosition(player: playerToUpdate.player, position: playerToUpdate.position.copyWith(team: newTeam));
-      final List<List<PlayerWithPosition>> newTeams = [List.from(state.teams[0]), List.from(state.teams[1])];
+      final List<PlayerWithPosition> newPositions = List.from(state.players);
 
-      newTeams[oldTeam - 1].remove(playerToUpdate);
-      newTeams[newTeam - 1].add(newPlayer);
+      newPositions[newPositions.indexOf(playerToUpdate)] = newPlayer;
 
-      dao.updatePlayer(playerToUpdate.position.copyWith(team: newTeam));
-      add(SetTeams(teams: newTeams));
+      add(SetTeams(players: newPositions));
     } else if (event is RemovePlayer) {
-      final List<List<PlayerWithPosition>> newTeams = [List.from(state.teams[0]), List.from(state.teams[1])];
+      final List<PlayerWithPosition> newPositions = List.from(state.players);
 
-      bool removed = false;
-      for (final team in newTeams) {
-        for (final player in team)
-          if (player.player.id == event.player.id) {
-            team.remove(player);
-            removed = true;
-            break;
-          }
-          if (removed) break;
+      for (final player in newPositions) {
+        if (player.player.id == event.player.id) {
+          newPositions.remove(player);
+          break;
+        }
       }
 
       dao.deletePlayerFromID(event.player.id);
-      add(SetTeams(teams: newTeams));
+      add(SetTeams(players: newPositions));
+    } else if (event is ShufflePlayers) {
+      // TODO: Handle uneven team split
+      final List<Player> players = List.from(event.players ?? state.players.map((player) => player.player));
+      final List<PlayerWithPosition> newPositions = [];
+
+      int team1Score = 0;
+      int team2Score = 0;
+
+      final position = PlayerPosition(playerId: 0, team: 1, x: 0, y: 0);
+
+      while (players.length > 0) {
+        final randomPlayer = players[rand.nextInt(players.length)];
+        final player1 = PlayerWithPosition(player: randomPlayer, position: position.copyWith(playerId: randomPlayer.id, team: 1));
+
+        newPositions.add(player1);
+        players.remove(randomPlayer);
+        if (players.length == 0) break;
+
+        team1Score += player1.player.score;
+        final scoreDifference = team1Score - team2Score;
+
+        final possiblePlayers = players.where((p) => (p.score - scoreDifference).abs() <= 2).toList(); // TODO: Adjust threshold
+
+        // If no players within threshold, get the one with the closest score
+        if (possiblePlayers.length == 0) {
+          int bestScore = (players[0].score - scoreDifference).abs();
+          Player bestPlayer = players[0];
+          for (int i = 1; i < players.length; i++) {
+            final score = (players[i].score - scoreDifference).abs();
+            if (score < bestScore) {
+              bestScore = score;
+              bestPlayer = players[i];
+            }
+          }
+
+          final player2 = PlayerWithPosition(player: bestPlayer, position: position.copyWith(playerId: bestPlayer.id, team: 2));
+          newPositions.add(player2);
+          players.remove(bestPlayer);
+
+          team2Score += player2.player.score;
+        } else {
+          final randomPlayer = possiblePlayers[rand.nextInt(possiblePlayers.length)];
+          final player2 = PlayerWithPosition(player: randomPlayer, position: position.copyWith(playerId: randomPlayer.id, team: 2));
+
+          newPositions.add(player2);
+          players.remove(randomPlayer);
+
+          team2Score += player2.player.score;
+        }
+      }
+
+      add(SetTeams(players: newPositions));
+      //TODO: Set fixed formation (needs window size)
     }
   }
 }

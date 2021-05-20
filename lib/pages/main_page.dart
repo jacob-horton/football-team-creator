@@ -64,7 +64,7 @@ class MainPage extends StatelessWidget {
   }
 
   Stack _buildTeam(BuildContext context, FormationState state, int team) {
-    final players = state.teams[team - 1];
+    final players = state.players.where((player) => player.position.team == team);
 
     String teamText = " Team $team ";
     if (team == 1)
