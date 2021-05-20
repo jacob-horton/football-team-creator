@@ -71,6 +71,20 @@ class FormationBloc extends Bloc<FormationEvent, FormationState> {
       );
 
       yield FormationCustom(players: newPositions);
+    } else if (event is AdjustPlayerPosition) {
+      int index = state.players.indexWhere((player) => player.player.id == event.playerId);
+
+      final newPositions = List<PlayerWithPosition>.from(state.players);
+      final oldPosition = state.players[index].position;
+      newPositions[index] = PlayerWithPosition(
+        player: state.players[index].player,
+        position: state.players[index].position.copyWith(
+          x: oldPosition.x + event.delta.dx,
+          y: oldPosition.y + event.delta.dy,
+        ),
+      );
+
+      yield FormationCustom(players: newPositions);
     } else if (event is SaveFormation) {
       dao.removeAllPlayers();
       for (final player in state.players) {

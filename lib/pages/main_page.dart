@@ -44,7 +44,7 @@ class MainPage extends StatelessWidget {
               controller: controller,
               physics: NeverScrollableScrollPhysics(),
               onPageChanged: (index) => BlocProvider.of<CurrentTeamBloc>(context).add(SetCurrentTeam(team: index + 1)),
-              children: [_buildTeam(context, state, 1), _buildTeam(context, state, 2)],
+              children: List.generate(2, (index) => _buildTeam(context, state, index + 1)),
             ),
           ),
           // Buttons
@@ -63,7 +63,7 @@ class MainPage extends StatelessWidget {
     );
   }
 
-  Stack _buildTeam(BuildContext context, FormationState state, int team) {
+  Widget _buildTeam(BuildContext context, FormationState state, int team) {
     final players = state.players.where((player) => player.position.team == team);
 
     String teamText = " Team $team ";

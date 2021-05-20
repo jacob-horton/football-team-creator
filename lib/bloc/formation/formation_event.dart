@@ -27,6 +27,16 @@ class SetPlayerPosition extends FormationEvent {
   List<Object?> get props => [playerPosition];
 }
 
+class AdjustPlayerPosition extends FormationEvent {
+  final int playerId;
+  final Offset delta;
+
+  AdjustPlayerPosition({required this.playerId, required this.delta});
+
+  @override
+  List<Object?> get props => [playerId, delta];
+}
+
 class SetFixedFormation extends FormationEvent {
   final List<int> formation;
   final Size windowSize;
@@ -84,8 +94,6 @@ class ChangePlayerTeam extends FormationEvent {
   List<Object?> get props => [playerPosition];
 }
 
-class SaveFormation extends FormationEvent {}
-
 class ShufflePlayers extends FormationEvent {
   final List<Player>? players;
 
@@ -94,3 +102,5 @@ class ShufflePlayers extends FormationEvent {
   @override
   List<Object?> get props => [players];
 }
+
+class SaveFormation extends FormationEvent {}

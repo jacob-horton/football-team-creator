@@ -41,24 +41,11 @@ class PlayerDraggable extends StatelessWidget {
         onPanUpdate: (details) {
           Size windowSize = MediaQuery.of(context).size;
 
-          // Clamp to border of window
-          double offX = _clamp(playerWithPosition.position.x + details.delta.dx, 0, windowSize.width - PlayerDraggable.size);
-          double offY = _clamp(playerWithPosition.position.y + details.delta.dy, 0, windowSize.height - PlayerDraggable.size);
-
-          // Correct offset when mouse moved outside window
-          if (details.globalPosition.dx < 0) offX = 0;
-          if (details.globalPosition.dy < 0) offY = 0;
-          if (details.globalPosition.dx > windowSize.width) offX = windowSize.width - size;
-          if (details.globalPosition.dy > windowSize.height) offY = windowSize.height - size;
-
+          // TODO: Clamp to border of window
           BlocProvider.of<FormationBloc>(context, listen: false).add(
-            SetPlayerPosition(
-              playerPosition: playerWithPosition.position.copyWith(
-                playerId: playerWithPosition.player.id,
-                team: 1,
-                x: offX,
-                y: offY,
-              ),
+            AdjustPlayerPosition(
+              playerId: playerWithPosition.player.id,
+              delta: details.delta,
             ),
           );
         },

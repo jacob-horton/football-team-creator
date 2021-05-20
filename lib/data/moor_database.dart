@@ -49,8 +49,9 @@ LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     // put the database file, called db.sqlite here, into the documents folder
     // for your app.
-    final file = File('./db.sqlite');
-    return VmDatabase(file);
+    final script = File(Platform.script.toFilePath());
+    final databasePath = File('${script.parent.path}/db.sqlite');
+    return VmDatabase(databasePath);
   });
 }
 
