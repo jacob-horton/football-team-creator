@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:football/bloc/formation_layouts/formation_layouts_bloc.dart';
 import 'package:football/data/moor_database.dart';
 import 'package:football/utils/window_resize.dart';
 import 'package:provider/provider.dart';
@@ -39,6 +40,7 @@ class MyApp extends StatelessWidget {
         providers: [
           BlocProvider(create: (_) => FormationBloc(dao: db.currentPlayerDao)),
           BlocProvider(create: (_) => CurrentTeamBloc()),
+          BlocProvider(create: (_) => FormationLayoutsBloc(dao: db.currentPlayerDao)),
         ],
         child: MaterialApp(
           title: appName,

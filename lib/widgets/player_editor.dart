@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:football/bloc/selected_player/selected_player_bloc.dart';
 import 'package:football/bloc/formation/formation_bloc.dart';
 import 'package:football/data/moor_database.dart';
+import 'package:football/widgets/rounded_container.dart';
 import 'package:moor/moor.dart' hide Column;
 import 'package:provider/provider.dart';
 
@@ -17,6 +18,8 @@ class PlayerEditor extends StatelessWidget {
   final colourController = TextEditingController();
   final numberController = TextEditingController();
   final preferredPositionController = TextEditingController();
+
+  final List<String> positions = ['Defense', 'Midfield', 'Attack'];
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +54,8 @@ class PlayerEditor extends StatelessWidget {
             onDelete: () {
               // TODO: Need to delete player from team before deleting from database
               Provider.of<PlayerDao>(context, listen: false).deletePlayerFromID(state.selectedPlayer?.id as int);
-              BlocProvider.of<FormationBloc>(context, listen: false).add(RemovePlayer(player: state.selectedPlayer?.toPlayer() as Player));
+              BlocProvider.of<FormationBloc>(context, listen: false)
+                  .add(RemovePlayer(player: state.selectedPlayer?.toPlayer() as Player, windowSize: MediaQuery.of(context).size));
               BlocProvider.of<SelectedPlayersBloc>(context, listen: false).add(ClearSelectedPlayer());
             },
             player: state.selectedPlayer as EditablePlayer,
@@ -86,6 +90,7 @@ class PlayerEditor extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.all(15.0),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(padding: const EdgeInsets.only(top: 10.0)),
           ColourPicker(state: state),
@@ -117,14 +122,41 @@ class PlayerEditor extends StatelessWidget {
               ), // TODO: Only accept numbers
             ],
           ),
-          Padding(padding: const EdgeInsets.only(top: 5.0)),
-          Expanded(
-            child: _buildField(
-                'Preferred Position',
-                preferredPositionController,
-                (preferredPosition) => BlocProvider.of<SelectedPlayersBloc>(context).add(
-                    SetSelectedPlayer(player: state.selectedPlayer?.copyWith(preferredPosition: int.parse(preferredPosition)) as EditablePlayer))),
-          ), // TODO: Make dropdown
+          Padding(padding: const EdgeInsets.only(top: 20.0)),
+          RoundedContainer(
+            colour: Colors.white,
+            height: 40.0,
+            child: DropdownButton(
+              value: state.selectedPlayer?.preferredPosition as int,
+              dropdownColor: Colors.white,
+              underline: Container(),
+              items: _mapIndexed(
+                positions,
+                (index, value) => DropdownMenuItem(
+                  child: Text(
+                    value as String,
+                    style: Theme.of(context).textTheme.bodyText2?.copyWith(fontSize: 20.0),
+                  ),
+                  value: index,
+                ),
+              ).toList(),
+              onChanged: (index) {
+                BlocProvider.of<SelectedPlayersBloc>(context)
+                    .add(SetSelectedPlayer(player: state.selectedPlayer?.copyWith(preferredPosition: index as int) as EditablePlayer));
+              },
+              iconEnabledColor: Colors.black,
+              icon: Expanded(
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 5.0),
+                    child: Icon(Icons.arrow_drop_down),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Expanded(child: Container()),
           Row(
             children: [
               onDelete == null
@@ -172,5 +204,14 @@ class PlayerEditor extends StatelessWidget {
         TextPosition(offset: newValue.toString().length),
       ),
     );
+  }
+
+  Iterable<E> _mapIndexed<E, T>(Iterable<T> items, E Function(int index, T item) f) sync* {
+    var index = 0;
+
+    for (final item in items) {
+      yield f(index, item);
+      index = index + 1;
+    }
   }
 }

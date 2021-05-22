@@ -59,20 +59,22 @@ class AddPlayer extends FormationEvent {
 
 class RemovePlayer extends FormationEvent {
   final Player player;
+  final Size windowSize;
 
-  RemovePlayer({required this.player});
+  RemovePlayer({required this.player, required this.windowSize});
 
   @override
-  List<Object?> get props => [player];
+  List<Object?> get props => [player, windowSize];
 }
 
 class SetTeams extends FormationEvent {
   final List<PlayerWithPosition> players;
+  final Size windowSize;
 
-  SetTeams({required this.players});
+  SetTeams({required this.players, required this.windowSize});
 
   @override
-  List<Object?> get props => [players];
+  List<Object?> get props => [players, windowSize];
 }
 
 class SwapPlayer extends FormationEvent {
@@ -87,20 +89,22 @@ class SwapPlayer extends FormationEvent {
 
 class ChangePlayerTeam extends FormationEvent {
   final PlayerPosition playerPosition;
+  final Size windowSize;
 
-  ChangePlayerTeam({required this.playerPosition});
+  ChangePlayerTeam({required this.playerPosition, required this.windowSize});
 
   @override
-  List<Object?> get props => [playerPosition];
+  List<Object?> get props => [playerPosition, windowSize];
 }
 
 class ShufflePlayers extends FormationEvent {
   final List<Player>? players;
+  final Size windowSize;
 
-  ShufflePlayers({this.players});
+  ShufflePlayers({this.players, required this.windowSize});
 
   @override
-  List<Object?> get props => [players];
+  List<Object?> get props => [players, windowSize];
 }
 
 class SaveFormation extends FormationEvent {}

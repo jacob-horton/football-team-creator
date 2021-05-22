@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:football/bloc/current_team/current_team_bloc.dart';
 import 'package:football/bloc/formation/formation_bloc.dart';
+import 'package:football/bloc/formation_layouts/formation_layouts_bloc.dart';
 import 'package:football/pages/team_editor.dart';
 import 'package:football/utils/navigation.dart';
 import 'package:football/widgets/formation_dropdown.dart';
@@ -12,16 +13,6 @@ import 'package:football/widgets/rounded_container.dart';
 
 class MainPage extends StatelessWidget {
   final PageController controller = PageController(initialPage: 0);
-
-  final List<List<int>> formations = [
-    [1, 3, 3, 2, 1],
-    [1, 3, 4, 2],
-    [1, 4, 4, 1],
-    [1, 3, 3, 3],
-    [1, 5, 4],
-    [3, 5, 2],
-    [4, 4, 2],
-  ];
 
   MainPage({Key? key}) : super(key: key);
 
@@ -43,7 +34,9 @@ class MainPage extends StatelessWidget {
             builder: (context, state) => PageView(
               controller: controller,
               physics: NeverScrollableScrollPhysics(),
-              onPageChanged: (index) => BlocProvider.of<CurrentTeamBloc>(context).add(SetCurrentTeam(team: index + 1)),
+              onPageChanged: (index) {
+                BlocProvider.of<CurrentTeamBloc>(context).add(SetCurrentTeam(team: index + 1));
+              },
               children: List.generate(2, (index) => _buildTeam(context, state, index + 1)),
             ),
           ),
@@ -52,7 +45,16 @@ class MainPage extends StatelessWidget {
             padding: const EdgeInsets.all(10.0),
             child: Row(
               children: [
-                FormationDropdown(formations: formations),
+                BlocBuilder<FormationLayoutsBloc, FormationLayoutsState>(
+                  builder: (context, state) {
+                    if (state is FormationLayout)
+                      return FormationDropdown(formations: state.formations);
+                    else if (state is FormationLayoutsInitial)
+                      return FormationDropdown(formations: []); 
+                    else
+                      return FormationDropdown(formations: []);
+                  },
+                ),
                 Padding(padding: EdgeInsets.only(left: 10.0)),
                 _buildChangePlayersButton(context),
               ],
@@ -65,6 +67,7 @@ class MainPage extends StatelessWidget {
 
   Widget _buildTeam(BuildContext context, FormationState state, int team) {
     final players = state.players.where((player) => player.position.team == team);
+    final newTeam = team == 1 ? 2 : 1;
 
     String teamText = " Team $team ";
     if (team == 1)
@@ -79,7 +82,10 @@ class MainPage extends StatelessWidget {
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: () {
-              BlocProvider.of<FormationBloc>(context).add(SetCustomFormation(team: team == 1 ? 2 : 1));
+              BlocProvider.of<FormationBloc>(context).add(SetCustomFormation(team: newTeam));
+              
+              BlocProvider.of<FormationLayoutsBloc>(context, listen: false)
+                  .add(SetFormationLayoutSize(size: state.players.where((p) => p.position.team == newTeam).length));
               if (team == 1) {
                 controller.nextPage(
                   duration: const Duration(milliseconds: 200),

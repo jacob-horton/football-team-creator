@@ -5,6 +5,7 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:football/data/moor_database.dart';
+import 'package:football/utils/formation_generator.dart';
 import 'package:football/widgets/player_draggable.dart';
 import 'package:meta/meta.dart';
 import 'package:moor/moor.dart';
@@ -34,28 +35,47 @@ class FormationBloc extends Bloc<FormationEvent, FormationState> {
       final Offset windowSize = (event.windowSize - Size(border * 2, border * 2)) as Offset;
       final horizontalSpacing = windowSize.dx / event.formation.length.toDouble();
 
-      final List<PlayerWithPosition> newPositions = List.from(state.players);
+      final List<PlayerWithPosition> newPositions = [];
       final playersOnTeam = state.players.where((player) => player.position.team == event.team).toList();
 
-      int index = 0;
-      for (int i = 0; i < event.formation.length; i++) {
-        final verticalSpacing = windowSize.dy / event.formation[i].toDouble();
-        for (int j = 0; j < event.formation[i]; j++) {
-          // TODO: Get random player with correct preferred position
-          final player = playersOnTeam[index];
+      List<int> spacesLeft = List.from(event.formation);
+      List<PlayerWithPosition> playersLeft = List.from(playersOnTeam);
 
-          newPositions[newPositions.indexOf(player)] = PlayerWithPosition(
-            player: player.player,
-            position: player.position.copyWith(
-              x: horizontalSpacing * i + horizontalSpacing / 2 - PlayerDraggable.size / 2 + border,
-              y: verticalSpacing * j + verticalSpacing / 2 - PlayerDraggable.size / 2 + border,
-            ),
-          );
+      while (playersLeft.isNotEmpty) {
+        final player = playersLeft[rand.nextInt(playersLeft.length)];
+        playersLeft.remove(player);
 
-          index++;
+        final double row = (player.player.preferedPosition / 2) * event.formation.length;
+
+        int closestRow = -1;
+        double closestDist = double.infinity;
+        for (int i = 0; i < spacesLeft.length; i++) {
+          if (spacesLeft[i] > 0) {
+            final distToRow = (i - row).abs();
+            if (distToRow < closestDist) {
+              closestRow = i;
+              closestDist = distToRow;
+            }
+          }
         }
+
+        int j = event.formation[closestRow] - spacesLeft[closestRow];
+        spacesLeft[closestRow]--;
+
+        final verticalSpacing = windowSize.dy / event.formation[closestRow].toDouble();
+
+        final newPlayerPosition = PlayerWithPosition(
+          player: player.player,
+          position: player.position.copyWith(
+            x: horizontalSpacing * closestRow + horizontalSpacing / 2 - PlayerDraggable.size / 2 + border,
+            y: verticalSpacing * j + verticalSpacing / 2 - PlayerDraggable.size / 2 + border,
+          ),
+        );
+
+        newPositions.add(newPlayerPosition);
       }
 
+      newPositions.addAll(state.players.where((player) => player.position.team != event.team).toList());
       yield FormationFixed(formation: event.formation, players: newPositions);
       add(SaveFormation());
     } else if (event is SetPlayerPosition) {
@@ -105,12 +125,20 @@ class FormationBloc extends Bloc<FormationEvent, FormationState> {
 
       add(SaveFormation());
     } else if (event is SetTeams) {
-      if (state is FormationFixed)
+      if (state is FormationFixed) {
+        List<PlayerWithPosition> oldTeam1 = state.players.where((p) => p.position.team == 1).toList();
+        List<PlayerWithPosition> newTeam1 = event.players.where((p) => p.position.team == 1).toList();
+        if (oldTeam1.length != newTeam1.length) _updateFormation(newTeam1.length, event.players.length - newTeam1.length, event.windowSize);
+        
         yield FormationFixed(formation: (state as FormationFixed).formation, players: event.players);
-      else
+        add(SaveFormation());
+      } else {
         yield FormationCustom(players: event.players);
 
-      add(SaveFormation());
+        List<PlayerWithPosition> team1 = state.players.where((p) => p.position.team == 1).toList();
+        _updateFormation(team1.length, event.players.length - team1.length, event.windowSize);
+        add(SaveFormation());
+      }
     } else if (event is ChangePlayerTeam) {
       // TODO: Is there a more efficient way
       final oldTeam = event.playerPosition.team;
@@ -122,7 +150,7 @@ class FormationBloc extends Bloc<FormationEvent, FormationState> {
 
       newPositions[newPositions.indexOf(playerToUpdate)] = newPlayer;
 
-      add(SetTeams(players: newPositions));
+      add(SetTeams(players: newPositions, windowSize: event.windowSize));
     } else if (event is RemovePlayer) {
       final List<PlayerWithPosition> newPositions = List.from(state.players);
 
@@ -134,60 +162,92 @@ class FormationBloc extends Bloc<FormationEvent, FormationState> {
       }
 
       dao.deletePlayerFromID(event.player.id);
-      add(SetTeams(players: newPositions));
+      add(SetTeams(players: newPositions, windowSize: event.windowSize));
     } else if (event is ShufflePlayers) {
-      // TODO: Handle uneven team split
       final List<Player> players = List.from(event.players ?? state.players.map((player) => player.player));
-      final List<PlayerWithPosition> newPositions = [];
+      List<PlayerWithPosition> newPositions = _simulatedAnnealing(players);
 
-      int team1Score = 0;
-      int team2Score = 0;
+      add(SetTeams(players: newPositions, windowSize: event.windowSize));
+    }
+  }
 
-      final position = PlayerPosition(playerId: 0, team: 1, x: 0, y: 0);
+  _updateFormation(int team1Size, int team2Size, Size windowSize) {
+    List<int> team1Formation = FormationGenerator.getFormations(team1Size)[0];
+    List<int> team2Formation = FormationGenerator.getFormations(team2Size)[0];
+    add(SetFixedFormation(formation: team1Formation, windowSize: windowSize, team: 1));
+    add(SetFixedFormation(formation: team2Formation, windowSize: windowSize, team: 2));
+  }
 
-      while (players.length > 0) {
-        final randomPlayer = players[rand.nextInt(players.length)];
-        final player1 = PlayerWithPosition(player: randomPlayer, position: position.copyWith(playerId: randomPlayer.id, team: 1));
+  final maxIterations = 10;
+  final initialPosition = PlayerPosition(playerId: 0, team: 1, x: 0, y: 0);
+  List<PlayerWithPosition> _simulatedAnnealing(List<Player> players) {
+    List<PlayerWithPosition> bestPlayers = _getInitialState(players);
+    double s = _getScore(bestPlayers);
 
-        newPositions.add(player1);
-        players.remove(randomPlayer);
-        if (players.length == 0) break;
+    int iterationsSinceImprovement = 0;
+    int i = 0;
 
-        team1Score += player1.player.score;
-        final scoreDifference = team1Score - team2Score;
+    while (iterationsSinceImprovement < maxIterations) {
+      iterationsSinceImprovement++;
 
-        final possiblePlayers = players.where((p) => (p.score - scoreDifference).abs() <= 2).toList(); // TODO: Adjust threshold
+      double t = 1 / exp(i);
+      List<PlayerWithPosition> neighbour = _getNeighbour(bestPlayers);
+      double sNew = _getScore(neighbour);
 
-        // If no players within threshold, get the one with the closest score
-        if (possiblePlayers.length == 0) {
-          int bestScore = (players[0].score - scoreDifference).abs();
-          Player bestPlayer = players[0];
-          for (int i = 1; i < players.length; i++) {
-            final score = (players[i].score - scoreDifference).abs();
-            if (score < bestScore) {
-              bestScore = score;
-              bestPlayer = players[i];
-            }
-          }
-
-          final player2 = PlayerWithPosition(player: bestPlayer, position: position.copyWith(playerId: bestPlayer.id, team: 2));
-          newPositions.add(player2);
-          players.remove(bestPlayer);
-
-          team2Score += player2.player.score;
-        } else {
-          final randomPlayer = possiblePlayers[rand.nextInt(possiblePlayers.length)];
-          final player2 = PlayerWithPosition(player: randomPlayer, position: position.copyWith(playerId: randomPlayer.id, team: 2));
-
-          newPositions.add(player2);
-          players.remove(randomPlayer);
-
-          team2Score += player2.player.score;
-        }
+      if (_getAcceptanceProbability(s, sNew, t) >= rand.nextDouble()) {
+        iterationsSinceImprovement = 0;
+        bestPlayers = neighbour;
+        s = sNew;
       }
 
-      add(SetTeams(players: newPositions));
-      //TODO: Set fixed formation (needs window size)
+      i++;
     }
+
+    return bestPlayers;
+  }
+
+  List<PlayerWithPosition> _getInitialState(List<Player> players) {
+    List<Player> shuffled = List.from(players)..shuffle(rand);
+    List<PlayerWithPosition> initialState = [];
+
+    for (int i = 0; i < shuffled.length; i++) {
+      int team = i < shuffled.length / 2 ? 1 : 2;
+      initialState.add(PlayerWithPosition(player: shuffled[i], position: initialPosition.copyWith(team: team, playerId: shuffled[i].id)));
+    }
+
+    return initialState;
+  }
+
+  List<PlayerWithPosition> _getNeighbour(List<PlayerWithPosition> players) {
+    List<PlayerWithPosition> playersCopy = List.from(players);
+    List<PlayerWithPosition> team1 = playersCopy.where((p) => p.position.team == 1).toList();
+    List<PlayerWithPosition> team2 = playersCopy.where((p) => p.position.team == 2).toList();
+
+    PlayerWithPosition team1Player = team1[rand.nextInt(team1.length)];
+    PlayerWithPosition team2Player = team2[rand.nextInt(team2.length)];
+
+    playersCopy[playersCopy.indexOf(team1Player)] = PlayerWithPosition(player: team1Player.player, position: team1Player.position.copyWith(team: 2));
+    playersCopy[playersCopy.indexOf(team2Player)] = PlayerWithPosition(player: team2Player.player, position: team2Player.position.copyWith(team: 1));
+
+    return playersCopy;
+  }
+
+  double _getScore(List<PlayerWithPosition> players) {
+    int team1Score = 0;
+    int team2Score = 0;
+
+    for (final player in players) {
+      if (player.position.team == 1)
+        team1Score += player.player.score;
+      else
+        team2Score += player.player.score;
+    }
+
+    return (team1Score - team2Score).abs().toDouble();
+  }
+
+  double _getAcceptanceProbability(double e, double eNew, double t) {
+    if (eNew < e) return 1;
+    return exp(-(eNew - e) / t);
   }
 }

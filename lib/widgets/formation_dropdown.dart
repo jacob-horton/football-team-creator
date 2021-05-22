@@ -15,11 +15,15 @@ class FormationDropdown extends StatelessWidget {
       colour: const Color(0xff71c67d),
       child: BlocBuilder<FormationBloc, FormationState>(
         builder: (context, state) {
+          int index = _getIndex(state);
+          if (index == -1) index = 0;
+          final items = _buildDropdownList(state);
+          
           return DropdownButtonHideUnderline(
             child: DropdownButton(
-              value: _getIndex(state),
+              value: index,
               dropdownColor: const Color(0xff333333),
-              items: _buildDropdownList(state),
+              items: items,
               onChanged: (index) {
                 FormationBloc formationBloc = BlocProvider.of<FormationBloc>(context);
                 final team = BlocProvider.of<CurrentTeamBloc>(context).state.team;
@@ -70,6 +74,8 @@ class FormationDropdown extends StatelessWidget {
   }
 
   int _getIndex(FormationState state) {
+    if (formations.length == 0) return 0;
+
     if (state is FormationFixed)
       return formations.indexOf(state.formation);
     else if (state is FormationCustom) return formations.length; // Custom (last item in list)
