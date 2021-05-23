@@ -126,19 +126,18 @@ class FormationBloc extends Bloc<FormationEvent, FormationState> {
       add(SaveFormation());
     } else if (event is SetTeams) {
       if (state is FormationFixed) {
-        List<PlayerWithPosition> oldTeam1 = state.players.where((p) => p.position.team == 1).toList();
         List<PlayerWithPosition> newTeam1 = event.players.where((p) => p.position.team == 1).toList();
-        if (oldTeam1.length != newTeam1.length) _updateFormation(newTeam1.length, event.players.length - newTeam1.length, event.windowSize);
-        
+        _updateFormation(newTeam1.length, event.players.length - newTeam1.length, event.windowSize);
+
         yield FormationFixed(formation: (state as FormationFixed).formation, players: event.players);
-        add(SaveFormation());
       } else {
         yield FormationCustom(players: event.players);
 
         List<PlayerWithPosition> team1 = state.players.where((p) => p.position.team == 1).toList();
         _updateFormation(team1.length, event.players.length - team1.length, event.windowSize);
-        add(SaveFormation());
       }
+
+      add(SaveFormation());
     } else if (event is ChangePlayerTeam) {
       // TODO: Is there a more efficient way
       final oldTeam = event.playerPosition.team;
@@ -251,3 +250,4 @@ class FormationBloc extends Bloc<FormationEvent, FormationState> {
     return exp(-(eNew - e) / t);
   }
 }
+

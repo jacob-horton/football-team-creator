@@ -4,11 +4,8 @@ import 'package:football/data/moor_database.dart';
 import 'package:football/utils/shirt_colours.dart';
 
 class Shirt extends StatelessWidget {
-  Shirt({Key? key, required this.size, this.player, this.colour, this.showNumber = false, this.showName = false}) : super(key: key) {
-    clipper = ShirtClip(size);
-  }
+  Shirt({Key? key, required this.size, this.player, this.colour, this.showNumber = false, this.showName = false}) : super(key: key);
 
-  late ShirtClip clipper;
   final double size;
   final Player? player;
   final String? colour;
@@ -20,7 +17,7 @@ class Shirt extends StatelessWidget {
     return Stack(
       children: [
         ClipPath(
-          clipper: clipper,
+          clipper: ShirtClip(size),
           child: SvgPicture.asset(
             'assets/shirt.svg',
             width: size,

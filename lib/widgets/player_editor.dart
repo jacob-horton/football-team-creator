@@ -52,7 +52,6 @@ class PlayerEditor extends StatelessWidget {
               BlocProvider.of<FormationBloc>(context, listen: false).add(LoadPositions());
             },
             onDelete: () {
-              // TODO: Need to delete player from team before deleting from database
               Provider.of<PlayerDao>(context, listen: false).deletePlayerFromID(state.selectedPlayer?.id as int);
               BlocProvider.of<FormationBloc>(context, listen: false)
                   .add(RemovePlayer(player: state.selectedPlayer?.toPlayer() as Player, windowSize: MediaQuery.of(context).size));

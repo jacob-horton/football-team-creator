@@ -18,64 +18,69 @@ class TeamEditor extends StatelessWidget {
       builder: (context, state) {
         return Scaffold(
           backgroundColor: const Color(0xfff5f5f5),
-          body: Column(
-            children: [
-              Expanded(
-                child: Row(
+          body: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      Expanded(child: _buildTeam(context, state, 1)),
+                      VerticalDivider(width: 0, endIndent: 10, indent: 10),
+                      Expanded(child: _buildTeam(context, state, 2)),
+                    ],
+                  ),
+                ),
+                Row(
                   children: [
-                    Expanded(child: _buildTeam(context, state, 1)),
-                    VerticalDivider(width: 0, endIndent: 10, indent: 10),
-                    Expanded(child: _buildTeam(context, state, 2)),
+                    TextButton(
+                      onPressed: () async {
+                        final Object? newPlayers = await Navigator.of(context).push(
+                          new MaterialPageRoute(
+                            builder: (_) => PlayerSelector(
+                              multiselect: true,
+                              initialPlayers: state.players.map((player) => player.player).toList(),
+                            ),
+                          ),
+                        );
+
+                        final formationBloc = BlocProvider.of<FormationBloc>(context, listen: false);
+                        if (newPlayers is List<EditablePlayer>) {
+                          formationBloc.add(ShufflePlayers(
+                              players: newPlayers.map<Player>((p) => p.toPlayer() as Player).toList(), windowSize: MediaQuery.of(context).size));
+                        } else if (newPlayers is EditablePlayer) {
+                          formationBloc.add(ShufflePlayers(players: [newPlayers.toPlayer() as Player], windowSize: MediaQuery.of(context).size));
+                        }
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text('SELECT PLAYERS'),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        BlocProvider.of<FormationBloc>(context, listen: false).add(ShufflePlayers(windowSize: MediaQuery.of(context).size));
+                        //_shuffleTeams(state, context, state.players);
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text('SHUFFLE TEAMS'),
+                      ),
+                    ),
+                    Expanded(child: Container()),
+                    TextButton(
+                      onPressed: () {
+                        final currentTeam = BlocProvider.of<CurrentTeamBloc>(context, listen: false).state.team;
+                        BlocProvider.of<FormationLayoutsBloc>(context, listen: false)
+                            .add(SetFormationLayoutSize(size: state.players.where((p) => p.position.team == currentTeam).length));
+                        Navigation.pop(context);
+                      },
+                      child: Text('DONE'),
+                    ),
                   ],
                 ),
-              ),
-              Row(
-                children: [
-                  TextButton(
-                    onPressed: () async {
-                      final Object? newPlayers = await Navigator.of(context).push(
-                        new MaterialPageRoute(
-                          builder: (_) => PlayerSelector(
-                            multiselect: true,
-                            initialPlayers: state.players.map((player) => player.player).toList(),
-                          ),
-                        ),
-                      );
-
-                      final formationBloc = BlocProvider.of<FormationBloc>(context, listen: false);
-                      if (newPlayers is List<EditablePlayer>) {
-                        formationBloc.add(ShufflePlayers(players: newPlayers.map<Player>((p) => p.toPlayer() as Player).toList(), windowSize: MediaQuery.of(context).size));
-                      } else if (newPlayers is EditablePlayer) {
-                        formationBloc.add(ShufflePlayers(players: [newPlayers.toPlayer() as Player], windowSize: MediaQuery.of(context).size));
-                      }
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Text('SELECT PLAYERS'),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      BlocProvider.of<FormationBloc>(context, listen: false).add(ShufflePlayers(windowSize: MediaQuery.of(context).size));
-                      //_shuffleTeams(state, context, state.players);
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Text('SHUFFLE TEAMS'),
-                    ),
-                  ),
-                  Expanded(child: Container()),
-                  TextButton(
-                    onPressed: () {
-                      final currentTeam = BlocProvider.of<CurrentTeamBloc>(context, listen: false).state.team;
-                      BlocProvider.of<FormationLayoutsBloc>(context, listen: false).add(SetFormationLayoutSize(size: state.players.where((p) => p.position.team == currentTeam).length));
-                      Navigation.pop(context);
-                    },
-                    child: Text('DONE'),
-                  ),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -94,7 +99,10 @@ class TeamEditor extends StatelessWidget {
       },
       builder: (context, _, __) => Column(
         children: [
-          Text('Team ${teamNumber.toString()}'),
+          Padding(
+            padding: const EdgeInsets.all(15.0),
+            child: Text('Team ${teamNumber.toString()}', style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold)),
+          ),
           Expanded(
             child: ListView(
               children: (players.toList()..sort((a, b) => a.player.name.compareTo(b.player.name))).map(
@@ -126,7 +134,11 @@ class TeamEditor extends StatelessWidget {
               ).toList(),
             ),
           ),
-          Text('Score: ${players.length == 0 ? 0 : players.map((player) => player.player.score).reduce((a, b) => a + b)}'),
+          Text(
+            'Score: ${players.length == 0 ? 0 : players.map((player) => player.player.score).reduce((a, b) => a + b)}',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0),
+          ),
+          Padding(padding: const EdgeInsets.all(3.0)),
         ],
       ),
     );

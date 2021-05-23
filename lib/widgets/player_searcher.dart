@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:football/bloc/formation/formation_bloc.dart';
 import 'package:football/bloc/selected_player/selected_player_bloc.dart';
 import 'package:football/data/moor_database.dart';
 import 'package:football/widgets/player_list_item.dart';
@@ -27,7 +28,7 @@ class _PlayerSearcherState extends State<PlayerSearcher> {
     return Padding(
       padding: const EdgeInsets.only(left: 20, top: 25, bottom: 15, right: 20),
       child: BlocBuilder<SelectedPlayersBloc, SelectedPlayersState>(
-        builder: (context, state) {
+        builder: (context, selectedPlayersState) {
           return Column(
             children: [
               Row(
@@ -52,15 +53,23 @@ class _PlayerSearcherState extends State<PlayerSearcher> {
                 child: StreamBuilder<List<Player>>(
                   stream: Provider.of<PlayerDao>(context).watchAllPlayers(nameFilter: searchValue),
                   builder: (context, snapshot) {
-                    final players = snapshot.data ?? [];
+                    var players = snapshot.data ?? [];
+                    if (!widget.multiselect) {
+                      for (final assignedPlayer in BlocProvider.of<FormationBloc>(context).state.players) {
+                        players.removeWhere((p) => p.id == assignedPlayer.player.id);
+                      }
+                    }
+
                     // TODO: Scroll to selected position
                     return ListView.separated(
                       padding: const EdgeInsets.only(top: 15),
                       itemBuilder: (context, index) {
                         bool isSelected = false;
-                        if (state is SingleSelectionState) isSelected = players[index].id == state.selectedPlayer?.id;
-                        if (state is NewPlayerState) isSelected = players[index].id == state.selectedPlayer?.id;
-                        else if (state is MultiSelectionState) isSelected = state.players.any((player) => player.id == players[index].id);
+                        if (selectedPlayersState is SingleSelectionState) isSelected = players[index].id == selectedPlayersState.selectedPlayer?.id;
+                        if (selectedPlayersState is NewPlayerState)
+                          isSelected = players[index].id == selectedPlayersState.selectedPlayer?.id;
+                        else if (selectedPlayersState is MultiSelectionState)
+                          isSelected = selectedPlayersState.players.any((player) => player.id == players[index].id);
 
                         return Padding(
                           padding: const EdgeInsets.symmetric(vertical: 3.0),
@@ -75,7 +84,7 @@ class _PlayerSearcherState extends State<PlayerSearcher> {
                                 EditablePlayer player = EditablePlayer.fromPlayer(p);
                                 SelectedPlayersEvent event;
                                 if (widget.multiselect) {
-                                  if (state is MultiSelectionState && state.players.any((p) => p.id == player.id))
+                                  if (selectedPlayersState is MultiSelectionState && selectedPlayersState.players.any((p) => p.id == player.id))
                                     event = RemoveSelectedPlayer(player: player);
                                   else
                                     event = AddSelectedPlayer(player: player);
@@ -95,7 +104,7 @@ class _PlayerSearcherState extends State<PlayerSearcher> {
               ),
               Row(
                 children: [
-                  _buildSelectButton(context, state),
+                  _buildSelectButton(context, selectedPlayersState),
                   Expanded(child: Container()),
                   TextButton(child: Text('CANCEL'), onPressed: widget.onCancel),
                   Padding(padding: const EdgeInsets.only(left: 15.0)),
