@@ -26,6 +26,18 @@ class PlayerPositions extends Table {
   Set<Column> get primaryKey => {playerId};
 }
 
+class SaveSlots extends Table {
+  IntColumn get playerId => integer().customConstraint('REFERENCES players(id)')();
+  IntColumn get slot => integer()();
+  IntColumn get team => integer()();
+
+  RealColumn get x => real()();
+  RealColumn get y => real()();
+
+  @override
+  Set<Column> get primaryKey => {slot, playerId};
+}
+
 class PlayerWithPosition {
   final Player player;
   final PlayerPosition position;
@@ -33,7 +45,7 @@ class PlayerWithPosition {
   PlayerWithPosition({required this.player, required this.position});
 }
 
-@UseMoor(tables: [Players, PlayerPositions], daos: [PlayerDao, CurrentPlayerDao])
+@UseMoor(tables: [Players, PlayerPositions, SaveSlots], daos: [PlayerDao, CurrentPlayerDao, SaveSlotDao])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
@@ -148,4 +160,47 @@ class CurrentPlayerDao extends DatabaseAccessor<AppDatabase> with _$CurrentPlaye
   Future deletePlayerFromID(int id) => (delete(playerPositions)..where((p) => p.playerId.equals(id))).go();
 
   Future removeAllPlayers() => delete(playerPositions).go();
+}
+
+@UseDao(tables: [PlayerPositions, SaveSlots, Players])
+class SaveSlotDao extends DatabaseAccessor<AppDatabase> with _$SaveSlotDaoMixin {
+  final AppDatabase db;
+
+  SaveSlotDao(this.db) : super(db);
+
+  Future saveFormation(int slot) async {
+    final currentPlayers = await db.currentPlayerDao.getAllPlayers();
+    for (final player in currentPlayers) {
+      final saveSlot = SaveSlotsCompanion(
+        playerId: Value(player.player.id),
+        team: Value(player.position.team),
+        x: Value(player.position.x),
+        y: Value(player.position.y),
+        slot: Value(slot),
+      );
+
+      into(saveSlots).insert(saveSlot, mode: InsertMode.insertOrReplace);
+    }
+  }
+
+  Future<List<PlayerWithPosition>> loadSlot(int lot) => select(saveSlots)
+      .join(
+        [
+          leftOuterJoin(
+            players,
+            players.id.equalsExp(saveSlots.playerId),
+          ),
+          leftOuterJoin(
+            playerPositions,
+            playerPositions.playerId.equalsExp(saveSlots.playerId),
+          ),
+        ],
+      )
+      .map(
+        (row) => PlayerWithPosition(
+          player: row.readTable(players),
+          position: row.readTable(playerPositions),
+        ),
+      )
+      .get();
 }
