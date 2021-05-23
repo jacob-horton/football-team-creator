@@ -6,7 +6,6 @@ import 'package:football/bloc/formation_layouts/formation_layouts_bloc.dart';
 import 'package:football/bloc/selected_player/selected_player_bloc.dart';
 import 'package:football/data/moor_database.dart';
 import 'package:football/pages/player_selector.dart';
-import 'package:football/utils/navigation.dart';
 import 'package:football/widgets/player_list_item.dart';
 
 class TeamEditor extends StatelessWidget {
@@ -73,7 +72,7 @@ class TeamEditor extends StatelessWidget {
                         final currentTeam = BlocProvider.of<CurrentTeamBloc>(context, listen: false).state.team;
                         BlocProvider.of<FormationLayoutsBloc>(context, listen: false)
                             .add(SetFormationLayoutSize(size: state.players.where((p) => p.position.team == currentTeam).length));
-                        Navigation.pop(context);
+                        Navigator.of(context).pop();
                       },
                       child: Text('DONE'),
                     ),

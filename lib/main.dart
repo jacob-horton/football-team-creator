@@ -51,6 +51,7 @@ class MyApp extends StatelessWidget {
               subtitle1: textStyle,
               caption: TextStyle(
                 fontSize: 16,
+                fontFamily: 'Roboto',
                 color: const Color(0xffb0b0b0),
               ),
             ),

@@ -2,40 +2,41 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:football/bloc/selected_player/selected_player_bloc.dart';
 import 'package:football/data/moor_database.dart';
-import 'package:football/utils/navigation.dart';
 import 'package:football/widgets/player_editor.dart';
 import 'package:football/widgets/player_searcher.dart';
 
 class PlayerSelector extends StatelessWidget {
   final bool multiselect;
-  late SelectedPlayersBloc bloc;
+  final List<Player> initialPlayers;
 
-  PlayerSelector({Key? key, required this.multiselect, List<Player>? initialPlayers}) : super(key: key) {
-    bloc = SelectedPlayersBloc(initialPlayers);
-  }
+  PlayerSelector({Key? key, required this.multiselect, required this.initialPlayers}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xfff5f5f5),
       body: BlocProvider(
-        create: (_) => bloc,
+        create: (_) => SelectedPlayersBloc(initialPlayers),
         child: Row(
           children: [
             Flexible(
-              child: PlayerSearcher(
-                onSelect: () {
-                  final state = bloc.state;
-                  if (state is SingleSelectionState) 
-                    Navigator.of(context).pop(state.selectedPlayer);
-                  else if (state is NewPlayerState) 
-                    Navigator.of(context).pop(state.selectedPlayer);
-                  else if (state is MultiSelectionState)
-                    Navigator.of(context).pop(state.players);
-                  else Navigation.pop(context);
+              child: BlocBuilder<SelectedPlayersBloc, SelectedPlayersState>(
+                builder: (context, state) {
+                  return PlayerSearcher(
+                    onSelect: () {
+                      if (state is SingleSelectionState)
+                        Navigator.of(context).pop(state.selectedPlayer);
+                      else if (state is NewPlayerState)
+                        Navigator.of(context).pop(state.selectedPlayer);
+                      else if (state is MultiSelectionState)
+                        Navigator.of(context).pop(state.players);
+                      else
+                        Navigator.of(context).pop();
+                    },
+                    onCancel: () => Navigator.of(context).pop(),
+                    multiselect: multiselect,
+                  );
                 },
-                onCancel: () => Navigation.pop(context),
-                multiselect: multiselect,
               ),
               flex: 7,
             ),

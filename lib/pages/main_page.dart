@@ -6,7 +6,6 @@ import 'package:football/bloc/current_team/current_team_bloc.dart';
 import 'package:football/bloc/formation/formation_bloc.dart';
 import 'package:football/bloc/formation_layouts/formation_layouts_bloc.dart';
 import 'package:football/pages/team_editor.dart';
-import 'package:football/utils/navigation.dart';
 import 'package:football/widgets/formation_dropdown.dart';
 import 'package:football/widgets/player_draggable.dart';
 import 'package:football/widgets/rounded_container.dart';
@@ -110,7 +109,7 @@ class MainPage extends StatelessWidget {
 
   Widget _buildChangePlayersButton(BuildContext context) {
     return GestureDetector(
-      onTap: () => Navigation.navigateTo(context, TeamEditor()),
+      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => TeamEditor())),
       child: RoundedContainer(
         colour: const Color(0xff71c67d),
         child: Center(

@@ -113,7 +113,6 @@ class FormationBloc extends Bloc<FormationEvent, FormationState> {
     } else if (event is AddPlayer) {
       dao.insertPlayer(event.player);
     } else if (event is SwapPlayer) {
-      // TODO: Error swapping player when duplicate player in team
       final swapIndex = state.players.indexWhere((player) => player.player.id == event.oldPlayer.player.id);
       final List<PlayerWithPosition> newPositions = List.from(state.players);
       newPositions[swapIndex] = new PlayerWithPosition(player: event.newPlayer, position: event.oldPlayer.position);
