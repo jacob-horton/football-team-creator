@@ -16,8 +16,10 @@ part 'formation_state.dart';
 class FormationBloc extends Bloc<FormationEvent, FormationState> {
   final Random rand = Random();
 
-  final CurrentPlayerDao dao;
-  FormationBloc({required this.dao}) : super(FormationCustom(players: [])) {
+  final CurrentPlayerDao currentPlayerDao;
+  final PlayerDao playerDao;
+
+  FormationBloc({required this.currentPlayerDao, required this.playerDao}) : super(FormationCustom(players: [])) {
     add(LoadPositions());
   }
 
@@ -26,7 +28,7 @@ class FormationBloc extends Bloc<FormationEvent, FormationState> {
     FormationEvent event,
   ) async* {
     if (event is LoadPositions) {
-      final players = await dao.getAllPlayers();
+      final players = await currentPlayerDao.getAllPlayers();
       yield FormationCustom(players: players);
     } else if (event is SetCustomFormation) {
       yield FormationCustom(players: state.players);
@@ -106,12 +108,12 @@ class FormationBloc extends Bloc<FormationEvent, FormationState> {
 
       yield FormationCustom(players: newPositions);
     } else if (event is SaveFormation) {
-      dao.removeAllPlayers();
+      currentPlayerDao.removeAllPlayers();
       for (final player in state.players) {
-        dao.insertPlayer(player.position);
+        currentPlayerDao.insertPlayer(player.position);
       }
     } else if (event is AddPlayer) {
-      dao.insertPlayer(event.player);
+      currentPlayerDao.insertPlayer(event.player);
     } else if (event is SwapPlayer) {
       // TODO: Error swapping player when duplicate player in team
       final swapIndex = state.players.indexWhere((player) => player.player.id == event.oldPlayer.player.id);
@@ -126,19 +128,28 @@ class FormationBloc extends Bloc<FormationEvent, FormationState> {
       add(SaveFormation());
     } else if (event is SetTeams) {
       if (state is FormationFixed) {
-        List<PlayerWithPosition> oldTeam1 = state.players.where((p) => p.position.team == 1).toList();
-        List<PlayerWithPosition> newTeam1 = event.players.where((p) => p.position.team == 1).toList();
-        if (oldTeam1.length != newTeam1.length) _updateFormation(newTeam1.length, event.players.length - newTeam1.length, event.windowSize);
-        
+        List<PlayerWithPosition> team1 = event.players.where((p) => p.position.team == 1).toList();
+        List<PlayerWithPosition> team2 = event.players.where((p) => p.position.team == 2).toList();
+        if (event.windowSize != null) _updateFormation(team1.length, event.players.length - team1.length, event.windowSize as Size);
+        else {
+          add(SetCustomFormation(team: 1, players: team1));
+          add(SetCustomFormation(team: 2, players: team2));
+        }
+
         yield FormationFixed(formation: (state as FormationFixed).formation, players: event.players);
-        add(SaveFormation());
       } else {
         yield FormationCustom(players: event.players);
 
-        List<PlayerWithPosition> team1 = state.players.where((p) => p.position.team == 1).toList();
-        _updateFormation(team1.length, event.players.length - team1.length, event.windowSize);
-        add(SaveFormation());
+        List<PlayerWithPosition> team1 = event.players.where((p) => p.position.team == 1).toList();
+        List<PlayerWithPosition> team2 = event.players.where((p) => p.position.team == 2).toList();
+        if (event.windowSize != null) _updateFormation(team1.length, event.players.length - team1.length, event.windowSize as Size);
+        else {
+          add(SetCustomFormation(team: 1, players: team1));
+          add(SetCustomFormation(team: 2, players: team2));
+        }
       }
+
+      add(SaveFormation());
     } else if (event is ChangePlayerTeam) {
       // TODO: Is there a more efficient way
       final oldTeam = event.playerPosition.team;
@@ -161,12 +172,25 @@ class FormationBloc extends Bloc<FormationEvent, FormationState> {
         }
       }
 
-      dao.deletePlayerFromID(event.player.id);
+      currentPlayerDao.deletePlayerFromID(event.player.id);
       add(SetTeams(players: newPositions, windowSize: event.windowSize));
     } else if (event is ShufflePlayers) {
       final List<Player> players = List.from(event.players ?? state.players.map((player) => player.player));
       List<PlayerWithPosition> newPositions = _simulatedAnnealing(players);
 
+      add(SetTeams(players: newPositions, windowSize: event.windowSize));
+    } else if (event is PermenantlyDeletePlayer) {
+      final List<PlayerWithPosition> newPositions = List.from(state.players);
+
+      for (final player in newPositions) {
+        if (player.player.id == event.player.id) {
+          newPositions.remove(player);
+          break;
+        }
+      }
+
+      currentPlayerDao.deletePlayerFromID(event.player.id);
+      playerDao.deletePlayerFromID(event.player.id);
       add(SetTeams(players: newPositions, windowSize: event.windowSize));
     }
   }
@@ -182,6 +206,8 @@ class FormationBloc extends Bloc<FormationEvent, FormationState> {
   final initialPosition = PlayerPosition(playerId: 0, team: 1, x: 0, y: 0);
   List<PlayerWithPosition> _simulatedAnnealing(List<Player> players) {
     List<PlayerWithPosition> bestPlayers = _getInitialState(players);
+    if (bestPlayers.length < 2) return bestPlayers; // If there are 0 or 1 players, then they don't need to be shuffled
+
     double s = _getScore(bestPlayers);
 
     int iterationsSinceImprovement = 0;

@@ -27,15 +27,20 @@ class PlayerPositions extends Table {
 }
 
 class SaveSlots extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text()();
+}
+
+class SaveSlotPlayers extends Table {
   IntColumn get playerId => integer().customConstraint('REFERENCES players(id)')();
-  IntColumn get slot => integer()();
+  IntColumn get saveSlotId => integer().customConstraint('REFERENCES save_slots(id)')();
   IntColumn get team => integer()();
 
   RealColumn get x => real()();
   RealColumn get y => real()();
 
   @override
-  Set<Column> get primaryKey => {slot, playerId};
+  Set<Column> get primaryKey => {playerId, saveSlotId};
 }
 
 class PlayerWithPosition {
@@ -45,7 +50,7 @@ class PlayerWithPosition {
   PlayerWithPosition({required this.player, required this.position});
 }
 
-@UseMoor(tables: [Players, PlayerPositions, SaveSlots], daos: [PlayerDao, CurrentPlayerDao, SaveSlotDao])
+@UseMoor(tables: [Players, PlayerPositions, SaveSlots, SaveSlotPlayers], daos: [PlayerDao, CurrentPlayerDao, SaveSlotDao])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
@@ -57,10 +62,7 @@ class AppDatabase extends _$AppDatabase {
 }
 
 LazyDatabase _openConnection() {
-  // the LazyDatabase util lets us find the right location for the file async.
   return LazyDatabase(() async {
-    // put the database file, called db.sqlite here, into the documents folder
-    // for your app.
     final script = File(Platform.script.toFilePath());
     final databasePath = File('${script.parent.path}/db.sqlite');
     return VmDatabase(databasePath);
@@ -83,7 +85,7 @@ class PlayerDao extends DatabaseAccessor<AppDatabase> with _$PlayerDaoMixin {
 
   Future<int> insertPlayer(Insertable<Player> player) => into(players).insert(player);
   Future updatePlayer(Insertable<Player> player) => update(players).replace(player);
-  Future deletePlayer(Insertable<Player> player) => delete(players).delete(player);
+  Future deletePlayer(Insertable<Player> player) => delete(players).delete(player); // TODO: delete from saveslots
   Future deletePlayerFromID(int id) => (delete(players)..where((p) => p.id.equals(id))).go();
 
   Future<Player> getPlayer(int id) => (select(players)..where((p) => p.id.equals(id))).getSingle();
@@ -97,6 +99,25 @@ class CurrentPlayerDao extends DatabaseAccessor<AppDatabase> with _$CurrentPlaye
 
   Stream<List<PlayerWithPosition>> watchPlayersOnTeam(int team) {
     return (select(playerPositions)..where((t) => t.team.equals(team)))
+        .join(
+          [
+            leftOuterJoin(
+              players,
+              players.id.equalsExp(playerPositions.playerId),
+            ),
+          ],
+        )
+        .map(
+          (row) => PlayerWithPosition(
+            player: row.readTable(players),
+            position: row.readTable(playerPositions),
+          ),
+        )
+        .watch();
+  }
+
+  Stream<List<PlayerWithPosition>> watchAllPlayers() {
+    return select(playerPositions)
         .join(
           [
             leftOuterJoin(
@@ -153,8 +174,7 @@ class CurrentPlayerDao extends DatabaseAccessor<AppDatabase> with _$CurrentPlaye
   }
 
   Future insertPlayer(Insertable<PlayerPosition> playerPosition) => into(playerPositions).insert(playerPosition);
-  Future updatePlayer(Insertable<PlayerPosition> playerPosition) =>
-      update(playerPositions).replace(playerPosition); // TODO: Fix updating - problem because swapping players changes ID
+  Future updatePlayer(Insertable<PlayerPosition> playerPosition) => update(playerPositions).replace(playerPosition);
 
   Future deletePlayer(Insertable<PlayerPosition> playerPosition) => delete(playerPositions).delete(playerPosition);
   Future deletePlayerFromID(int id) => (delete(playerPositions)..where((p) => p.playerId.equals(id))).go();
@@ -162,45 +182,60 @@ class CurrentPlayerDao extends DatabaseAccessor<AppDatabase> with _$CurrentPlaye
   Future removeAllPlayers() => delete(playerPositions).go();
 }
 
-@UseDao(tables: [PlayerPositions, SaveSlots, Players])
+@UseDao(tables: [PlayerPositions, SaveSlots, SaveSlotPlayers, Players])
 class SaveSlotDao extends DatabaseAccessor<AppDatabase> with _$SaveSlotDaoMixin {
   final AppDatabase db;
 
   SaveSlotDao(this.db) : super(db);
 
-  Future saveFormation(int slot) async {
+  Future saveSlot(String name) async {
+    int slotId = await into(saveSlots).insert(SaveSlotsCompanion(name: Value(name)));
+
     final currentPlayers = await db.currentPlayerDao.getAllPlayers();
+
     for (final player in currentPlayers) {
-      final saveSlot = SaveSlotsCompanion(
+      final saveSlotPlayer = SaveSlotPlayersCompanion(
+        saveSlotId: Value(slotId),
         playerId: Value(player.player.id),
         team: Value(player.position.team),
         x: Value(player.position.x),
         y: Value(player.position.y),
-        slot: Value(slot),
       );
 
-      into(saveSlots).insert(saveSlot, mode: InsertMode.insertOrReplace);
+      into(saveSlotPlayers).insert(saveSlotPlayer);
     }
   }
 
-  Future<List<PlayerWithPosition>> loadSlot(int lot) => select(saveSlots)
+  Future<List<PlayerWithPosition>> loadSlot(String name) => (select(saveSlots)..where((slot) => slot.name.equals(name)))
       .join(
         [
           leftOuterJoin(
-            players,
-            players.id.equalsExp(saveSlots.playerId),
+            saveSlotPlayers,
+            saveSlotPlayers.saveSlotId.equalsExp(saveSlots.id),
           ),
           leftOuterJoin(
-            playerPositions,
-            playerPositions.playerId.equalsExp(saveSlots.playerId),
+            players,
+            players.id.equalsExp(saveSlotPlayers.playerId),
           ),
         ],
       )
       .map(
         (row) => PlayerWithPosition(
           player: row.readTable(players),
-          position: row.readTable(playerPositions),
+          position: _convertSaveSlotPlayerToPosition(row.readTable(saveSlotPlayers)),
         ),
       )
       .get();
+
+  PlayerPosition _convertSaveSlotPlayerToPosition(SaveSlotPlayer player) {
+    return PlayerPosition(playerId: player.playerId, team: player.team, x: player.x, y: player.y);
+  }
+
+  Stream<List<SaveSlot>> watchAllSlots() => select(saveSlots).watch();
+
+  void deleteSlot(String name) async {
+    final slotId = (await (select(saveSlots)..where((slot) => slot.name.equals(name))).getSingle()).id;
+    (delete(saveSlotPlayers)..where((player) => player.saveSlotId.equals(slotId))).go();
+    (delete(saveSlots)..where((slot) => slot.name.equals(name))).go();
+  }
 }

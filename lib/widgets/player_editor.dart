@@ -40,8 +40,7 @@ class PlayerEditor extends StatelessWidget {
                 name: state.selectedPlayer?.name == null ? Value.absent() : Value(state.selectedPlayer?.name as String),
                 number: state.selectedPlayer?.number == null ? Value.absent() : Value(state.selectedPlayer?.number as int),
                 score: state.selectedPlayer?.score == null ? Value.absent() : Value(state.selectedPlayer?.score as int),
-                preferedPosition:
-                    state.selectedPlayer?.preferredPosition == null ? Value.absent() : Value(state.selectedPlayer?.preferredPosition as int),
+                preferedPosition: Value(state.selectedPlayer?.preferredPosition ?? 0),
               );
 
               if (state is NewPlayerState) {
@@ -53,10 +52,12 @@ class PlayerEditor extends StatelessWidget {
             },
             onDelete: () {
               // TODO: Need to delete player from team before deleting from database
-              Provider.of<PlayerDao>(context, listen: false).deletePlayerFromID(state.selectedPlayer?.id as int);
-              BlocProvider.of<FormationBloc>(context, listen: false)
-                  .add(RemovePlayer(player: state.selectedPlayer?.toPlayer() as Player, windowSize: MediaQuery.of(context).size));
+              //BlocProvider.of<FormationBloc>(context, listen: false)
+              //    .add(RemovePlayer(player: state.selectedPlayer?.toPlayer() as Player, windowSize: MediaQuery.of(context).size));
               BlocProvider.of<SelectedPlayersBloc>(context, listen: false).add(ClearSelectedPlayer());
+              BlocProvider.of<FormationBloc>(context, listen: false)
+                  .add(PermenantlyDeletePlayer(player: state.selectedPlayer?.toPlayer() as Player, windowSize: MediaQuery.of(context).size));
+              //Provider.of<PlayerDao>(context, listen: false).deletePlayerFromID(state.selectedPlayer?.id as int);
             },
             player: state.selectedPlayer as EditablePlayer,
           );
@@ -98,9 +99,8 @@ class PlayerEditor extends StatelessWidget {
           _buildField(
             'Name',
             nameController,
-            (name) => // nameController.text = name,
-                BlocProvider.of<SelectedPlayersBloc>(context)
-                    .add(SetSelectedPlayer(player: state.selectedPlayer?.copyWith(name: name) as EditablePlayer)),
+            (name) => BlocProvider.of<SelectedPlayersBloc>(context)
+                .add(SetSelectedPlayer(player: state.selectedPlayer?.copyWith(name: name) as EditablePlayer)),
           ),
           Padding(padding: const EdgeInsets.only(top: 5.0)),
           Row(
@@ -127,7 +127,7 @@ class PlayerEditor extends StatelessWidget {
             colour: Colors.white,
             height: 40.0,
             child: DropdownButton(
-              value: state.selectedPlayer?.preferredPosition as int,
+              value: state.selectedPlayer?.preferredPosition ?? 0,
               dropdownColor: Colors.white,
               underline: Container(),
               items: _mapIndexed(
@@ -190,7 +190,7 @@ class PlayerEditor extends StatelessWidget {
     );
   }
 
-  _updateController(TextEditingController controller, Object? newValue, {bool clearIfNull = false}) {
+  _updateController(TextEditingController controller, Object? newValue, {bool clearIfNull = true}) {
     if (newValue == null) {
       if (clearIfNull)
         newValue = '';

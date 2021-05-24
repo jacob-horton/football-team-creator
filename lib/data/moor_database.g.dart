@@ -637,26 +637,208 @@ class $PlayerPositionsTable extends PlayerPositions
 }
 
 class SaveSlot extends DataClass implements Insertable<SaveSlot> {
-  final int playerId;
-  final int slot;
-  final int team;
-  final double x;
-  final double y;
-  SaveSlot(
-      {required this.playerId,
-      required this.slot,
-      required this.team,
-      required this.x,
-      required this.y});
+  final int id;
+  final String name;
+  SaveSlot({required this.id, required this.name});
   factory SaveSlot.fromData(Map<String, dynamic> data, GeneratedDatabase db,
       {String? prefix}) {
     final effectivePrefix = prefix ?? '';
     final intType = db.typeSystem.forDartType<int>();
-    final doubleType = db.typeSystem.forDartType<double>();
+    final stringType = db.typeSystem.forDartType<String>();
     return SaveSlot(
+      id: intType.mapFromDatabaseResponse(data['${effectivePrefix}id'])!,
+      name: stringType.mapFromDatabaseResponse(data['${effectivePrefix}name'])!,
+    );
+  }
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['name'] = Variable<String>(name);
+    return map;
+  }
+
+  SaveSlotsCompanion toCompanion(bool nullToAbsent) {
+    return SaveSlotsCompanion(
+      id: Value(id),
+      name: Value(name),
+    );
+  }
+
+  factory SaveSlot.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= moorRuntimeOptions.defaultSerializer;
+    return SaveSlot(
+      id: serializer.fromJson<int>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= moorRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'name': serializer.toJson<String>(name),
+    };
+  }
+
+  SaveSlot copyWith({int? id, String? name}) => SaveSlot(
+        id: id ?? this.id,
+        name: name ?? this.name,
+      );
+  @override
+  String toString() {
+    return (StringBuffer('SaveSlot(')
+          ..write('id: $id, ')
+          ..write('name: $name')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => $mrjf($mrjc(id.hashCode, name.hashCode));
+  @override
+  bool operator ==(dynamic other) =>
+      identical(this, other) ||
+      (other is SaveSlot && other.id == this.id && other.name == this.name);
+}
+
+class SaveSlotsCompanion extends UpdateCompanion<SaveSlot> {
+  final Value<int> id;
+  final Value<String> name;
+  const SaveSlotsCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+  });
+  SaveSlotsCompanion.insert({
+    this.id = const Value.absent(),
+    required String name,
+  }) : name = Value(name);
+  static Insertable<SaveSlot> custom({
+    Expression<int>? id,
+    Expression<String>? name,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+    });
+  }
+
+  SaveSlotsCompanion copyWith({Value<int>? id, Value<String>? name}) {
+    return SaveSlotsCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SaveSlotsCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SaveSlotsTable extends SaveSlots
+    with TableInfo<$SaveSlotsTable, SaveSlot> {
+  final GeneratedDatabase _db;
+  final String? _alias;
+  $SaveSlotsTable(this._db, [this._alias]);
+  final VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedIntColumn id = _constructId();
+  GeneratedIntColumn _constructId() {
+    return GeneratedIntColumn('id', $tableName, false,
+        hasAutoIncrement: true, declaredAsPrimaryKey: true);
+  }
+
+  final VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedTextColumn name = _constructName();
+  GeneratedTextColumn _constructName() {
+    return GeneratedTextColumn(
+      'name',
+      $tableName,
+      false,
+    );
+  }
+
+  @override
+  List<GeneratedColumn> get $columns => [id, name];
+  @override
+  $SaveSlotsTable get asDslTable => this;
+  @override
+  String get $tableName => _alias ?? 'save_slots';
+  @override
+  final String actualTableName = 'save_slots';
+  @override
+  VerificationContext validateIntegrity(Insertable<SaveSlot> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SaveSlot map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : null;
+    return SaveSlot.fromData(data, _db, prefix: effectivePrefix);
+  }
+
+  @override
+  $SaveSlotsTable createAlias(String alias) {
+    return $SaveSlotsTable(_db, alias);
+  }
+}
+
+class SaveSlotPlayer extends DataClass implements Insertable<SaveSlotPlayer> {
+  final int playerId;
+  final int saveSlotId;
+  final int team;
+  final double x;
+  final double y;
+  SaveSlotPlayer(
+      {required this.playerId,
+      required this.saveSlotId,
+      required this.team,
+      required this.x,
+      required this.y});
+  factory SaveSlotPlayer.fromData(
+      Map<String, dynamic> data, GeneratedDatabase db,
+      {String? prefix}) {
+    final effectivePrefix = prefix ?? '';
+    final intType = db.typeSystem.forDartType<int>();
+    final doubleType = db.typeSystem.forDartType<double>();
+    return SaveSlotPlayer(
       playerId:
           intType.mapFromDatabaseResponse(data['${effectivePrefix}player_id'])!,
-      slot: intType.mapFromDatabaseResponse(data['${effectivePrefix}slot'])!,
+      saveSlotId: intType
+          .mapFromDatabaseResponse(data['${effectivePrefix}save_slot_id'])!,
       team: intType.mapFromDatabaseResponse(data['${effectivePrefix}team'])!,
       x: doubleType.mapFromDatabaseResponse(data['${effectivePrefix}x'])!,
       y: doubleType.mapFromDatabaseResponse(data['${effectivePrefix}y'])!,
@@ -666,29 +848,29 @@ class SaveSlot extends DataClass implements Insertable<SaveSlot> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['player_id'] = Variable<int>(playerId);
-    map['slot'] = Variable<int>(slot);
+    map['save_slot_id'] = Variable<int>(saveSlotId);
     map['team'] = Variable<int>(team);
     map['x'] = Variable<double>(x);
     map['y'] = Variable<double>(y);
     return map;
   }
 
-  SaveSlotsCompanion toCompanion(bool nullToAbsent) {
-    return SaveSlotsCompanion(
+  SaveSlotPlayersCompanion toCompanion(bool nullToAbsent) {
+    return SaveSlotPlayersCompanion(
       playerId: Value(playerId),
-      slot: Value(slot),
+      saveSlotId: Value(saveSlotId),
       team: Value(team),
       x: Value(x),
       y: Value(y),
     );
   }
 
-  factory SaveSlot.fromJson(Map<String, dynamic> json,
+  factory SaveSlotPlayer.fromJson(Map<String, dynamic> json,
       {ValueSerializer? serializer}) {
     serializer ??= moorRuntimeOptions.defaultSerializer;
-    return SaveSlot(
+    return SaveSlotPlayer(
       playerId: serializer.fromJson<int>(json['playerId']),
-      slot: serializer.fromJson<int>(json['slot']),
+      saveSlotId: serializer.fromJson<int>(json['saveSlotId']),
       team: serializer.fromJson<int>(json['team']),
       x: serializer.fromJson<double>(json['x']),
       y: serializer.fromJson<double>(json['y']),
@@ -699,27 +881,27 @@ class SaveSlot extends DataClass implements Insertable<SaveSlot> {
     serializer ??= moorRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'playerId': serializer.toJson<int>(playerId),
-      'slot': serializer.toJson<int>(slot),
+      'saveSlotId': serializer.toJson<int>(saveSlotId),
       'team': serializer.toJson<int>(team),
       'x': serializer.toJson<double>(x),
       'y': serializer.toJson<double>(y),
     };
   }
 
-  SaveSlot copyWith(
-          {int? playerId, int? slot, int? team, double? x, double? y}) =>
-      SaveSlot(
+  SaveSlotPlayer copyWith(
+          {int? playerId, int? saveSlotId, int? team, double? x, double? y}) =>
+      SaveSlotPlayer(
         playerId: playerId ?? this.playerId,
-        slot: slot ?? this.slot,
+        saveSlotId: saveSlotId ?? this.saveSlotId,
         team: team ?? this.team,
         x: x ?? this.x,
         y: y ?? this.y,
       );
   @override
   String toString() {
-    return (StringBuffer('SaveSlot(')
+    return (StringBuffer('SaveSlotPlayer(')
           ..write('playerId: $playerId, ')
-          ..write('slot: $slot, ')
+          ..write('saveSlotId: $saveSlotId, ')
           ..write('team: $team, ')
           ..write('x: $x, ')
           ..write('y: $y')
@@ -730,68 +912,68 @@ class SaveSlot extends DataClass implements Insertable<SaveSlot> {
   @override
   int get hashCode => $mrjf($mrjc(
       playerId.hashCode,
-      $mrjc(
-          slot.hashCode, $mrjc(team.hashCode, $mrjc(x.hashCode, y.hashCode)))));
+      $mrjc(saveSlotId.hashCode,
+          $mrjc(team.hashCode, $mrjc(x.hashCode, y.hashCode)))));
   @override
   bool operator ==(dynamic other) =>
       identical(this, other) ||
-      (other is SaveSlot &&
+      (other is SaveSlotPlayer &&
           other.playerId == this.playerId &&
-          other.slot == this.slot &&
+          other.saveSlotId == this.saveSlotId &&
           other.team == this.team &&
           other.x == this.x &&
           other.y == this.y);
 }
 
-class SaveSlotsCompanion extends UpdateCompanion<SaveSlot> {
+class SaveSlotPlayersCompanion extends UpdateCompanion<SaveSlotPlayer> {
   final Value<int> playerId;
-  final Value<int> slot;
+  final Value<int> saveSlotId;
   final Value<int> team;
   final Value<double> x;
   final Value<double> y;
-  const SaveSlotsCompanion({
+  const SaveSlotPlayersCompanion({
     this.playerId = const Value.absent(),
-    this.slot = const Value.absent(),
+    this.saveSlotId = const Value.absent(),
     this.team = const Value.absent(),
     this.x = const Value.absent(),
     this.y = const Value.absent(),
   });
-  SaveSlotsCompanion.insert({
+  SaveSlotPlayersCompanion.insert({
     required int playerId,
-    required int slot,
+    required int saveSlotId,
     required int team,
     required double x,
     required double y,
   })  : playerId = Value(playerId),
-        slot = Value(slot),
+        saveSlotId = Value(saveSlotId),
         team = Value(team),
         x = Value(x),
         y = Value(y);
-  static Insertable<SaveSlot> custom({
+  static Insertable<SaveSlotPlayer> custom({
     Expression<int>? playerId,
-    Expression<int>? slot,
+    Expression<int>? saveSlotId,
     Expression<int>? team,
     Expression<double>? x,
     Expression<double>? y,
   }) {
     return RawValuesInsertable({
       if (playerId != null) 'player_id': playerId,
-      if (slot != null) 'slot': slot,
+      if (saveSlotId != null) 'save_slot_id': saveSlotId,
       if (team != null) 'team': team,
       if (x != null) 'x': x,
       if (y != null) 'y': y,
     });
   }
 
-  SaveSlotsCompanion copyWith(
+  SaveSlotPlayersCompanion copyWith(
       {Value<int>? playerId,
-      Value<int>? slot,
+      Value<int>? saveSlotId,
       Value<int>? team,
       Value<double>? x,
       Value<double>? y}) {
-    return SaveSlotsCompanion(
+    return SaveSlotPlayersCompanion(
       playerId: playerId ?? this.playerId,
-      slot: slot ?? this.slot,
+      saveSlotId: saveSlotId ?? this.saveSlotId,
       team: team ?? this.team,
       x: x ?? this.x,
       y: y ?? this.y,
@@ -804,8 +986,8 @@ class SaveSlotsCompanion extends UpdateCompanion<SaveSlot> {
     if (playerId.present) {
       map['player_id'] = Variable<int>(playerId.value);
     }
-    if (slot.present) {
-      map['slot'] = Variable<int>(slot.value);
+    if (saveSlotId.present) {
+      map['save_slot_id'] = Variable<int>(saveSlotId.value);
     }
     if (team.present) {
       map['team'] = Variable<int>(team.value);
@@ -821,9 +1003,9 @@ class SaveSlotsCompanion extends UpdateCompanion<SaveSlot> {
 
   @override
   String toString() {
-    return (StringBuffer('SaveSlotsCompanion(')
+    return (StringBuffer('SaveSlotPlayersCompanion(')
           ..write('playerId: $playerId, ')
-          ..write('slot: $slot, ')
+          ..write('saveSlotId: $saveSlotId, ')
           ..write('team: $team, ')
           ..write('x: $x, ')
           ..write('y: $y')
@@ -832,11 +1014,11 @@ class SaveSlotsCompanion extends UpdateCompanion<SaveSlot> {
   }
 }
 
-class $SaveSlotsTable extends SaveSlots
-    with TableInfo<$SaveSlotsTable, SaveSlot> {
+class $SaveSlotPlayersTable extends SaveSlotPlayers
+    with TableInfo<$SaveSlotPlayersTable, SaveSlotPlayer> {
   final GeneratedDatabase _db;
   final String? _alias;
-  $SaveSlotsTable(this._db, [this._alias]);
+  $SaveSlotPlayersTable(this._db, [this._alias]);
   final VerificationMeta _playerIdMeta = const VerificationMeta('playerId');
   @override
   late final GeneratedIntColumn playerId = _constructPlayerId();
@@ -845,15 +1027,12 @@ class $SaveSlotsTable extends SaveSlots
         $customConstraints: 'REFERENCES players(id)');
   }
 
-  final VerificationMeta _slotMeta = const VerificationMeta('slot');
+  final VerificationMeta _saveSlotIdMeta = const VerificationMeta('saveSlotId');
   @override
-  late final GeneratedIntColumn slot = _constructSlot();
-  GeneratedIntColumn _constructSlot() {
-    return GeneratedIntColumn(
-      'slot',
-      $tableName,
-      false,
-    );
+  late final GeneratedIntColumn saveSlotId = _constructSaveSlotId();
+  GeneratedIntColumn _constructSaveSlotId() {
+    return GeneratedIntColumn('save_slot_id', $tableName, false,
+        $customConstraints: 'REFERENCES save_slots(id)');
   }
 
   final VerificationMeta _teamMeta = const VerificationMeta('team');
@@ -890,15 +1069,15 @@ class $SaveSlotsTable extends SaveSlots
   }
 
   @override
-  List<GeneratedColumn> get $columns => [playerId, slot, team, x, y];
+  List<GeneratedColumn> get $columns => [playerId, saveSlotId, team, x, y];
   @override
-  $SaveSlotsTable get asDslTable => this;
+  $SaveSlotPlayersTable get asDslTable => this;
   @override
-  String get $tableName => _alias ?? 'save_slots';
+  String get $tableName => _alias ?? 'save_slot_players';
   @override
-  final String actualTableName = 'save_slots';
+  final String actualTableName = 'save_slot_players';
   @override
-  VerificationContext validateIntegrity(Insertable<SaveSlot> instance,
+  VerificationContext validateIntegrity(Insertable<SaveSlotPlayer> instance,
       {bool isInserting = false}) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
@@ -908,11 +1087,13 @@ class $SaveSlotsTable extends SaveSlots
     } else if (isInserting) {
       context.missing(_playerIdMeta);
     }
-    if (data.containsKey('slot')) {
+    if (data.containsKey('save_slot_id')) {
       context.handle(
-          _slotMeta, slot.isAcceptableOrUnknown(data['slot']!, _slotMeta));
+          _saveSlotIdMeta,
+          saveSlotId.isAcceptableOrUnknown(
+              data['save_slot_id']!, _saveSlotIdMeta));
     } else if (isInserting) {
-      context.missing(_slotMeta);
+      context.missing(_saveSlotIdMeta);
     }
     if (data.containsKey('team')) {
       context.handle(
@@ -934,16 +1115,16 @@ class $SaveSlotsTable extends SaveSlots
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {slot, playerId};
+  Set<GeneratedColumn> get $primaryKey => {playerId, saveSlotId};
   @override
-  SaveSlot map(Map<String, dynamic> data, {String? tablePrefix}) {
+  SaveSlotPlayer map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : null;
-    return SaveSlot.fromData(data, _db, prefix: effectivePrefix);
+    return SaveSlotPlayer.fromData(data, _db, prefix: effectivePrefix);
   }
 
   @override
-  $SaveSlotsTable createAlias(String alias) {
-    return $SaveSlotsTable(_db, alias);
+  $SaveSlotPlayersTable createAlias(String alias) {
+    return $SaveSlotPlayersTable(_db, alias);
   }
 }
 
@@ -953,6 +1134,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $PlayerPositionsTable playerPositions =
       $PlayerPositionsTable(this);
   late final $SaveSlotsTable saveSlots = $SaveSlotsTable(this);
+  late final $SaveSlotPlayersTable saveSlotPlayers =
+      $SaveSlotPlayersTable(this);
   late final PlayerDao playerDao = PlayerDao(this as AppDatabase);
   late final CurrentPlayerDao currentPlayerDao =
       CurrentPlayerDao(this as AppDatabase);
@@ -961,7 +1144,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   Iterable<TableInfo> get allTables => allSchemaEntities.whereType<TableInfo>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities =>
-      [players, playerPositions, saveSlots];
+      [players, playerPositions, saveSlots, saveSlotPlayers];
 }
 
 // **************************************************************************
@@ -978,5 +1161,6 @@ mixin _$CurrentPlayerDaoMixin on DatabaseAccessor<AppDatabase> {
 mixin _$SaveSlotDaoMixin on DatabaseAccessor<AppDatabase> {
   $PlayerPositionsTable get playerPositions => attachedDatabase.playerPositions;
   $SaveSlotsTable get saveSlots => attachedDatabase.saveSlots;
+  $SaveSlotPlayersTable get saveSlotPlayers => attachedDatabase.saveSlotPlayers;
   $PlayersTable get players => attachedDatabase.players;
 }

@@ -41,7 +41,7 @@ class MyApp extends StatelessWidget {
       ],
       child: MultiBlocProvider(
         providers: [
-          BlocProvider(create: (_) => FormationBloc(dao: db.currentPlayerDao)),
+          BlocProvider(create: (_) => FormationBloc(currentPlayerDao: db.currentPlayerDao, playerDao: db.playerDao)),
           BlocProvider(create: (_) => FormationLayoutsBloc(dao: db.currentPlayerDao)),
           BlocProvider(create: (_) => CurrentTeamBloc()),
         ],
