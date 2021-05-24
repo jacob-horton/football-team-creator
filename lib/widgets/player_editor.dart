@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:football/bloc/selected_player/selected_player_bloc.dart';
 import 'package:football/bloc/formation/formation_bloc.dart';
 import 'package:football/data/moor_database.dart';
+import 'package:football/utils/regex_input_formatter.dart';
 import 'package:football/widgets/rounded_container.dart';
 import 'package:moor/moor.dart' hide Column;
 import 'package:provider/provider.dart';
@@ -104,19 +105,23 @@ class PlayerEditor extends StatelessWidget {
             children: [
               Expanded(
                 child: _buildField(
-                    'Number',
-                    numberController,
-                    (number) => BlocProvider.of<SelectedPlayersBloc>(context)
-                        .add(SetSelectedPlayer(player: state.selectedPlayer?.copyWith(number: int.parse(number)) as EditablePlayer))),
-              ), // TODO: Only accept numbers
+                  'Number',
+                  numberController,
+                  (number) => BlocProvider.of<SelectedPlayersBloc>(context)
+                      .add(SetSelectedPlayer(player: state.selectedPlayer?.copyWith(number: int.parse(number)) as EditablePlayer)),
+                  onlyNumbers: true,
+                ),
+              ),
               Padding(padding: const EdgeInsets.only(left: 20.0)),
               Expanded(
                 child: _buildField(
-                    'Score',
-                    scoreController,
-                    (score) => BlocProvider.of<SelectedPlayersBloc>(context)
-                        .add(SetSelectedPlayer(player: state.selectedPlayer?.copyWith(score: int.parse(score)) as EditablePlayer))),
-              ), // TODO: Only accept numbers
+                  'Score',
+                  scoreController,
+                  (score) => BlocProvider.of<SelectedPlayersBloc>(context)
+                      .add(SetSelectedPlayer(player: state.selectedPlayer?.copyWith(score: int.parse(score)) as EditablePlayer)),
+                  onlyNumbers: true,
+                ),
+              ),
             ],
           ),
           Padding(padding: const EdgeInsets.only(top: 20.0)),
@@ -174,7 +179,7 @@ class PlayerEditor extends StatelessWidget {
     );
   }
 
-  Widget _buildField(String hint, TextEditingController controller, Function(String) onChanged) {
+  Widget _buildField(String hint, TextEditingController controller, Function(String) onChanged, {bool onlyNumbers = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -182,7 +187,11 @@ class PlayerEditor extends StatelessWidget {
           padding: const EdgeInsets.all(5.0),
           child: Text(hint),
         ),
-        InputBox(controller: controller, onChanged: onChanged),
+        InputBox(
+          controller: controller,
+          onChanged: onChanged,
+          inputFormatters: onlyNumbers ? [RegExInputFormatter.withRegex('^[0-9]*\$')] : [],
+        ),
       ],
     );
   }

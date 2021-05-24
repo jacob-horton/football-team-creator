@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:football/utils/regex_input_formatter.dart';
 
 class InputBox extends StatelessWidget {
   final IconData? icon;
   final String? hint;
   final Function(String)? onChanged;
   final TextEditingController? controller;
+  final List<TextInputFormatter>? inputFormatters;
 
-  InputBox({Key? key, this.hint, this.icon, this.onChanged, this.controller}) : super(key: key);
+  InputBox({Key? key, this.hint, this.icon, this.onChanged, this.controller, this.inputFormatters}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -27,6 +30,7 @@ class InputBox extends StatelessWidget {
               : Container(),
           Expanded(
             child: TextFormField(
+              inputFormatters: inputFormatters,
               onChanged: onChanged,
               controller: controller,
               style: Theme.of(context).textTheme.bodyText2?.copyWith(fontSize: 20.0),
