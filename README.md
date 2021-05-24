@@ -1,2 +1,2 @@
-# Football
-This is a football team creator app made in flutter
+# Football Team Creator
+An app, made in flutter for desktop devices, to create football teams
