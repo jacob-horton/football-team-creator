@@ -42,12 +42,12 @@ class TeamEditor extends StatelessWidget {
                             ),
                           ),
                         );
-
                         final formationBloc = BlocProvider.of<FormationBloc>(context, listen: false);
                         if (newPlayers is List<EditablePlayer>) {
                           formationBloc.add(ShufflePlayers(
                               players: newPlayers.map<Player>((p) => p.toPlayer() as Player).toList(), windowSize: MediaQuery.of(context).size));
                         } else if (newPlayers is EditablePlayer) {
+                          // TODO: Fix error when only 1 player selected
                           formationBloc.add(ShufflePlayers(players: [newPlayers.toPlayer() as Player], windowSize: MediaQuery.of(context).size));
                         }
                       },

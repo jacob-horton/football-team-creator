@@ -67,11 +67,21 @@ class RemovePlayer extends FormationEvent {
   List<Object?> get props => [player, windowSize];
 }
 
-class SetTeams extends FormationEvent {
-  final List<PlayerWithPosition> players;
+class PermenantlyDeletePlayer extends FormationEvent {
+  final Player player;
   final Size windowSize;
 
-  SetTeams({required this.players, required this.windowSize});
+  PermenantlyDeletePlayer({required this.player, required this.windowSize});
+
+  @override
+  List<Object?> get props => [player, windowSize];
+}
+
+class SetTeams extends FormationEvent {
+  final List<PlayerWithPosition> players;
+  final Size? windowSize;
+
+  SetTeams({required this.players, this.windowSize});
 
   @override
   List<Object?> get props => [players, windowSize];

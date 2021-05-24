@@ -5,6 +5,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:football/bloc/current_team/current_team_bloc.dart';
 import 'package:football/bloc/formation/formation_bloc.dart';
 import 'package:football/bloc/formation_layouts/formation_layouts_bloc.dart';
+import 'package:football/data/moor_database.dart';
+import 'package:football/pages/slots_page.dart';
 import 'package:football/pages/team_editor.dart';
 import 'package:football/widgets/formation_dropdown.dart';
 import 'package:football/widgets/player_draggable.dart';
@@ -29,33 +31,49 @@ class MainPage extends StatelessWidget {
             ),
           ),
           // Players
-          BlocBuilder<FormationBloc, FormationState>(
-            builder: (context, state) => PageView(
-              controller: controller,
-              physics: NeverScrollableScrollPhysics(),
-              onPageChanged: (index) {
-                BlocProvider.of<CurrentTeamBloc>(context).add(SetCurrentTeam(team: index + 1));
-              },
-              children: List.generate(2, (index) => _buildTeam(context, state, index + 1)),
-            ),
+          StreamBuilder<List<PlayerWithPosition>>(
+            stream: BlocProvider.of<FormationBloc>(context).currentPlayerDao.watchAllPlayers(),
+            builder: (context, snapshot) {
+              return BlocBuilder<FormationBloc, FormationState>(
+                builder: (context, state) => PageView(
+                  controller: controller,
+                  physics: NeverScrollableScrollPhysics(),
+                  onPageChanged: (index) {
+                    BlocProvider.of<CurrentTeamBloc>(context).add(SetCurrentTeam(team: index + 1));
+                  },
+                  children: List.generate(2, (index) => _buildTeam(context, state, index + 1)),
+                ),
+              );
+            }
           ),
           // Buttons
           Padding(
             padding: const EdgeInsets.all(10.0),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 BlocBuilder<FormationLayoutsBloc, FormationLayoutsState>(
                   builder: (context, state) {
                     if (state is FormationLayout)
                       return FormationDropdown(formations: state.formations);
                     else if (state is FormationLayoutsInitial)
-                      return FormationDropdown(formations: []); 
+                      return FormationDropdown(formations: []);
                     else
                       return FormationDropdown(formations: []);
                   },
                 ),
                 Padding(padding: EdgeInsets.only(left: 10.0)),
-                _buildChangePlayersButton(context),
+                _buildButton(
+                  context,
+                  text: 'CHANGE PLAYERS',
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => TeamEditor())),
+                ),
+                Expanded(child: Container()),
+                _buildButton(
+                  context,
+                  text: 'SAVE SLOTS',
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => SlotsPage())),
+                ),
               ],
             ),
           ),
@@ -82,7 +100,7 @@ class MainPage extends StatelessWidget {
             behavior: HitTestBehavior.opaque,
             onTap: () {
               BlocProvider.of<FormationBloc>(context).add(SetCustomFormation(team: newTeam));
-              
+
               BlocProvider.of<FormationLayoutsBloc>(context, listen: false)
                   .add(SetFormationLayoutSize(size: state.players.where((p) => p.position.team == newTeam).length));
               if (team == 1) {
@@ -107,14 +125,14 @@ class MainPage extends StatelessWidget {
     );
   }
 
-  Widget _buildChangePlayersButton(BuildContext context) {
+  Widget _buildButton(BuildContext context, {required Function() onTap, required String text}) {
     return GestureDetector(
-      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => TeamEditor())),
+      onTap: onTap,
       child: RoundedContainer(
         colour: const Color(0xff71c67d),
         child: Center(
           child: Text(
-            'CHANGE PLAYERS',
+            text.toUpperCase(),
             style: Theme.of(context).textTheme.bodyText1,
           ),
         ),

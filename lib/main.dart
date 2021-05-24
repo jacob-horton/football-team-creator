@@ -34,13 +34,16 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final db = AppDatabase();
-    return Provider(
-      create: (_) => db.playerDao,
+    return MultiProvider(
+      providers: [
+        Provider(create: (_) => db.playerDao),
+        Provider(create: (_) => db.saveSlotDao),
+      ],
       child: MultiBlocProvider(
         providers: [
-          BlocProvider(create: (_) => FormationBloc(dao: db.currentPlayerDao)),
-          BlocProvider(create: (_) => CurrentTeamBloc()),
+          BlocProvider(create: (_) => FormationBloc(currentPlayerDao: db.currentPlayerDao, playerDao: db.playerDao)),
           BlocProvider(create: (_) => FormationLayoutsBloc(dao: db.currentPlayerDao)),
+          BlocProvider(create: (_) => CurrentTeamBloc()),
         ],
         child: MaterialApp(
           title: appName,
