@@ -179,7 +179,7 @@ class FormationBloc extends Bloc<FormationEvent, FormationState> {
       final List<Player> players = List.from(event.players ?? state.players.map((player) => player.player));
       List<PlayerWithPosition> newPositions = _simulatedAnnealing(players);
 
-      add(SetTeams(players: newPositions, windowSize: event.windowSize, havePlayersChanged: false));
+      add(SetTeams(players: newPositions, windowSize: event.windowSize, havePlayersChanged: event.players != null));
     } else if (event is PermenantlyDeletePlayer) {
       final List<PlayerWithPosition> newPositions = List.from(state.players);
 
