@@ -50,7 +50,7 @@ flutter:
   assets:
     - assets/background.png
     - assets/shirt.svg
-  
+
   fonts:
     - family: Roboto
       fonts:

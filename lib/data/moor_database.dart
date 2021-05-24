@@ -173,6 +173,9 @@ class CurrentPlayerDao extends DatabaseAccessor<AppDatabase> with _$CurrentPlaye
         .get();
   }
 
+  void insertPlayers(List<Insertable<PlayerPosition>> players) async => batch((b) => b.insertAll(playerPositions, players));
+  void updatePlayers(List<Insertable<PlayerPosition>> players) async => batch((b) => b.replaceAll(playerPositions, players));
+
   Future insertPlayer(Insertable<PlayerPosition> playerPosition) => into(playerPositions).insert(playerPosition);
   Future updatePlayer(Insertable<PlayerPosition> playerPosition) => update(playerPositions).replace(playerPosition);
 
@@ -192,18 +195,22 @@ class SaveSlotDao extends DatabaseAccessor<AppDatabase> with _$SaveSlotDaoMixin 
     int slotId = await into(saveSlots).insert(SaveSlotsCompanion(name: Value(name)));
 
     final currentPlayers = await db.currentPlayerDao.getAllPlayers();
-
-    for (final player in currentPlayers) {
-      final saveSlotPlayer = SaveSlotPlayersCompanion(
-        saveSlotId: Value(slotId),
-        playerId: Value(player.player.id),
-        team: Value(player.position.team),
-        x: Value(player.position.x),
-        y: Value(player.position.y),
-      );
-
-      into(saveSlotPlayers).insert(saveSlotPlayer);
-    }
+    batch(
+      (b) => b.insertAll(
+        saveSlotPlayers,
+        currentPlayers
+            .map(
+              (player) => SaveSlotPlayersCompanion(
+                saveSlotId: Value(slotId),
+                playerId: Value(player.player.id),
+                team: Value(player.position.team),
+                x: Value(player.position.x),
+                y: Value(player.position.y),
+              ),
+            )
+            .toList(),
+      ),
+    );
   }
 
   Future<List<PlayerWithPosition>> loadSlot(String name) => (select(saveSlots)..where((slot) => slot.name.equals(name)))

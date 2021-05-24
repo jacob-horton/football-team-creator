@@ -52,7 +52,7 @@ class PlayerDraggable extends StatelessWidget {
         onPanEnd: (_) {
           final bloc = BlocProvider.of<FormationBloc>(context);
           bloc.add(SetCustomFormation(team: playerWithPosition.position.team));
-          bloc.add(SaveFormation());
+          bloc.add(SaveFormation(havePlayersChanged: false));
         },
         child: Container(
           width: PlayerDraggable.size,

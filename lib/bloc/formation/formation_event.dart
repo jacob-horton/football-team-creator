@@ -41,8 +41,9 @@ class SetFixedFormation extends FormationEvent {
   final List<int> formation;
   final Size windowSize;
   final int team;
+  final bool saveFormation;
 
-  SetFixedFormation({required this.formation, required this.windowSize, required this.team});
+  SetFixedFormation({required this.formation, required this.windowSize, required this.team, this.saveFormation = true});
 
   @override
   List<Object?> get props => [formation, windowSize, team];
@@ -80,11 +81,12 @@ class PermenantlyDeletePlayer extends FormationEvent {
 class SetTeams extends FormationEvent {
   final List<PlayerWithPosition> players;
   final Size? windowSize;
+  final bool havePlayersChanged;
 
-  SetTeams({required this.players, this.windowSize});
+  SetTeams({required this.players, this.windowSize, required this.havePlayersChanged});
 
   @override
-  List<Object?> get props => [players, windowSize];
+  List<Object?> get props => [players, windowSize, havePlayersChanged];
 }
 
 class SwapPlayer extends FormationEvent {
@@ -117,4 +119,11 @@ class ShufflePlayers extends FormationEvent {
   List<Object?> get props => [players, windowSize];
 }
 
-class SaveFormation extends FormationEvent {}
+class SaveFormation extends FormationEvent {
+  final bool havePlayersChanged;
+
+  SaveFormation({required this.havePlayersChanged});
+
+  @override
+  List<Object?> get props => [havePlayersChanged];
+}

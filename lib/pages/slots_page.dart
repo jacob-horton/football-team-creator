@@ -69,7 +69,7 @@ class SlotsPage extends StatelessWidget {
                             ),
                             onTap: () async {
                               final players = await Provider.of<SaveSlotDao>(context, listen: false).loadSlot(slots[index].name);
-                              BlocProvider.of<FormationBloc>(context, listen: false).add(SetTeams(players: players));
+                              BlocProvider.of<FormationBloc>(context, listen: false).add(SetTeams(players: players, havePlayersChanged: true));
                               Navigator.of(context).pop();
                             },
                           ),
