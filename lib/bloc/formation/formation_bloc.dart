@@ -47,7 +47,7 @@ class FormationBloc extends Bloc<FormationEvent, FormationState> {
         final player = playersLeft[rand.nextInt(playersLeft.length)];
         playersLeft.remove(player);
 
-        final double row = (player.player.preferedPosition / 2) * event.formation.length;
+        final double row = (player.player.preferredPosition / 2) * event.formation.length;
 
         int closestRow = -1;
         double closestDist = double.infinity;

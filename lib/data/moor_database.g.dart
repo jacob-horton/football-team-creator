@@ -11,16 +11,14 @@ class Player extends DataClass implements Insertable<Player> {
   final int id;
   final int number;
   final int score;
-  final int preferedPosition;
+  final int preferredPosition;
   final String name;
-  final String colour;
   Player(
       {required this.id,
       required this.number,
       required this.score,
-      required this.preferedPosition,
-      required this.name,
-      required this.colour});
+      required this.preferredPosition,
+      required this.name});
   factory Player.fromData(Map<String, dynamic> data, GeneratedDatabase db,
       {String? prefix}) {
     final effectivePrefix = prefix ?? '';
@@ -31,11 +29,9 @@ class Player extends DataClass implements Insertable<Player> {
       number:
           intType.mapFromDatabaseResponse(data['${effectivePrefix}number'])!,
       score: intType.mapFromDatabaseResponse(data['${effectivePrefix}score'])!,
-      preferedPosition: intType.mapFromDatabaseResponse(
+      preferredPosition: intType.mapFromDatabaseResponse(
           data['${effectivePrefix}prefered_position'])!,
       name: stringType.mapFromDatabaseResponse(data['${effectivePrefix}name'])!,
-      colour:
-          stringType.mapFromDatabaseResponse(data['${effectivePrefix}colour'])!,
     );
   }
   @override
@@ -44,9 +40,8 @@ class Player extends DataClass implements Insertable<Player> {
     map['id'] = Variable<int>(id);
     map['number'] = Variable<int>(number);
     map['score'] = Variable<int>(score);
-    map['prefered_position'] = Variable<int>(preferedPosition);
+    map['prefered_position'] = Variable<int>(preferredPosition);
     map['name'] = Variable<String>(name);
-    map['colour'] = Variable<String>(colour);
     return map;
   }
 
@@ -55,9 +50,8 @@ class Player extends DataClass implements Insertable<Player> {
       id: Value(id),
       number: Value(number),
       score: Value(score),
-      preferedPosition: Value(preferedPosition),
+      preferredPosition: Value(preferredPosition),
       name: Value(name),
-      colour: Value(colour),
     );
   }
 
@@ -68,9 +62,8 @@ class Player extends DataClass implements Insertable<Player> {
       id: serializer.fromJson<int>(json['id']),
       number: serializer.fromJson<int>(json['number']),
       score: serializer.fromJson<int>(json['score']),
-      preferedPosition: serializer.fromJson<int>(json['preferedPosition']),
+      preferredPosition: serializer.fromJson<int>(json['preferredPosition']),
       name: serializer.fromJson<String>(json['name']),
-      colour: serializer.fromJson<String>(json['colour']),
     );
   }
   @override
@@ -80,9 +73,8 @@ class Player extends DataClass implements Insertable<Player> {
       'id': serializer.toJson<int>(id),
       'number': serializer.toJson<int>(number),
       'score': serializer.toJson<int>(score),
-      'preferedPosition': serializer.toJson<int>(preferedPosition),
+      'preferredPosition': serializer.toJson<int>(preferredPosition),
       'name': serializer.toJson<String>(name),
-      'colour': serializer.toJson<String>(colour),
     };
   }
 
@@ -90,16 +82,14 @@ class Player extends DataClass implements Insertable<Player> {
           {int? id,
           int? number,
           int? score,
-          int? preferedPosition,
-          String? name,
-          String? colour}) =>
+          int? preferredPosition,
+          String? name}) =>
       Player(
         id: id ?? this.id,
         number: number ?? this.number,
         score: score ?? this.score,
-        preferedPosition: preferedPosition ?? this.preferedPosition,
+        preferredPosition: preferredPosition ?? this.preferredPosition,
         name: name ?? this.name,
-        colour: colour ?? this.colour,
       );
   @override
   String toString() {
@@ -107,9 +97,8 @@ class Player extends DataClass implements Insertable<Player> {
           ..write('id: $id, ')
           ..write('number: $number, ')
           ..write('score: $score, ')
-          ..write('preferedPosition: $preferedPosition, ')
-          ..write('name: $name, ')
-          ..write('colour: $colour')
+          ..write('preferredPosition: $preferredPosition, ')
+          ..write('name: $name')
           ..write(')'))
         .toString();
   }
@@ -119,10 +108,8 @@ class Player extends DataClass implements Insertable<Player> {
       id.hashCode,
       $mrjc(
           number.hashCode,
-          $mrjc(
-              score.hashCode,
-              $mrjc(preferedPosition.hashCode,
-                  $mrjc(name.hashCode, colour.hashCode))))));
+          $mrjc(score.hashCode,
+              $mrjc(preferredPosition.hashCode, name.hashCode)))));
   @override
   bool operator ==(dynamic other) =>
       identical(this, other) ||
@@ -130,53 +117,46 @@ class Player extends DataClass implements Insertable<Player> {
           other.id == this.id &&
           other.number == this.number &&
           other.score == this.score &&
-          other.preferedPosition == this.preferedPosition &&
-          other.name == this.name &&
-          other.colour == this.colour);
+          other.preferredPosition == this.preferredPosition &&
+          other.name == this.name);
 }
 
 class PlayersCompanion extends UpdateCompanion<Player> {
   final Value<int> id;
   final Value<int> number;
   final Value<int> score;
-  final Value<int> preferedPosition;
+  final Value<int> preferredPosition;
   final Value<String> name;
-  final Value<String> colour;
   const PlayersCompanion({
     this.id = const Value.absent(),
     this.number = const Value.absent(),
     this.score = const Value.absent(),
-    this.preferedPosition = const Value.absent(),
+    this.preferredPosition = const Value.absent(),
     this.name = const Value.absent(),
-    this.colour = const Value.absent(),
   });
   PlayersCompanion.insert({
     this.id = const Value.absent(),
     required int number,
     required int score,
-    required int preferedPosition,
+    required int preferredPosition,
     required String name,
-    required String colour,
   })  : number = Value(number),
         score = Value(score),
-        preferedPosition = Value(preferedPosition),
-        name = Value(name),
-        colour = Value(colour);
+        preferredPosition = Value(preferredPosition),
+        name = Value(name);
   static Insertable<Player> custom({
     Expression<int>? id,
     Expression<int>? number,
     Expression<int>? score,
-    Expression<int>? preferedPosition,
+    Expression<int>? preferredPosition,
     Expression<String>? name,
-    Expression<String>? colour,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (number != null) 'number': number,
       if (score != null) 'score': score,
-      if (preferedPosition != null) 'prefered_position': preferedPosition,
+      if (preferredPosition != null) 'prefered_position': preferredPosition,
       if (name != null) 'name': name,
-      if (colour != null) 'colour': colour,
     });
   }
 
@@ -184,16 +164,14 @@ class PlayersCompanion extends UpdateCompanion<Player> {
       {Value<int>? id,
       Value<int>? number,
       Value<int>? score,
-      Value<int>? preferedPosition,
-      Value<String>? name,
-      Value<String>? colour}) {
+      Value<int>? preferredPosition,
+      Value<String>? name}) {
     return PlayersCompanion(
       id: id ?? this.id,
       number: number ?? this.number,
       score: score ?? this.score,
-      preferedPosition: preferedPosition ?? this.preferedPosition,
+      preferredPosition: preferredPosition ?? this.preferredPosition,
       name: name ?? this.name,
-      colour: colour ?? this.colour,
     );
   }
 
@@ -209,14 +187,11 @@ class PlayersCompanion extends UpdateCompanion<Player> {
     if (score.present) {
       map['score'] = Variable<int>(score.value);
     }
-    if (preferedPosition.present) {
-      map['prefered_position'] = Variable<int>(preferedPosition.value);
+    if (preferredPosition.present) {
+      map['prefered_position'] = Variable<int>(preferredPosition.value);
     }
     if (name.present) {
       map['name'] = Variable<String>(name.value);
-    }
-    if (colour.present) {
-      map['colour'] = Variable<String>(colour.value);
     }
     return map;
   }
@@ -227,9 +202,8 @@ class PlayersCompanion extends UpdateCompanion<Player> {
           ..write('id: $id, ')
           ..write('number: $number, ')
           ..write('score: $score, ')
-          ..write('preferedPosition: $preferedPosition, ')
-          ..write('name: $name, ')
-          ..write('colour: $colour')
+          ..write('preferredPosition: $preferredPosition, ')
+          ..write('name: $name')
           ..write(')'))
         .toString();
   }
@@ -269,11 +243,12 @@ class $PlayersTable extends Players with TableInfo<$PlayersTable, Player> {
     );
   }
 
-  final VerificationMeta _preferedPositionMeta =
-      const VerificationMeta('preferedPosition');
+  final VerificationMeta _preferredPositionMeta =
+      const VerificationMeta('preferredPosition');
   @override
-  late final GeneratedIntColumn preferedPosition = _constructPreferedPosition();
-  GeneratedIntColumn _constructPreferedPosition() {
+  late final GeneratedIntColumn preferredPosition =
+      _constructPreferredPosition();
+  GeneratedIntColumn _constructPreferredPosition() {
     return GeneratedIntColumn(
       'prefered_position',
       $tableName,
@@ -292,20 +267,9 @@ class $PlayersTable extends Players with TableInfo<$PlayersTable, Player> {
     );
   }
 
-  final VerificationMeta _colourMeta = const VerificationMeta('colour');
-  @override
-  late final GeneratedTextColumn colour = _constructColour();
-  GeneratedTextColumn _constructColour() {
-    return GeneratedTextColumn(
-      'colour',
-      $tableName,
-      false,
-    );
-  }
-
   @override
   List<GeneratedColumn> get $columns =>
-      [id, number, score, preferedPosition, name, colour];
+      [id, number, score, preferredPosition, name];
   @override
   $PlayersTable get asDslTable => this;
   @override
@@ -334,23 +298,17 @@ class $PlayersTable extends Players with TableInfo<$PlayersTable, Player> {
     }
     if (data.containsKey('prefered_position')) {
       context.handle(
-          _preferedPositionMeta,
-          preferedPosition.isAcceptableOrUnknown(
-              data['prefered_position']!, _preferedPositionMeta));
+          _preferredPositionMeta,
+          preferredPosition.isAcceptableOrUnknown(
+              data['prefered_position']!, _preferredPositionMeta));
     } else if (isInserting) {
-      context.missing(_preferedPositionMeta);
+      context.missing(_preferredPositionMeta);
     }
     if (data.containsKey('name')) {
       context.handle(
           _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
     } else if (isInserting) {
       context.missing(_nameMeta);
-    }
-    if (data.containsKey('colour')) {
-      context.handle(_colourMeta,
-          colour.isAcceptableOrUnknown(data['colour']!, _colourMeta));
-    } else if (isInserting) {
-      context.missing(_colourMeta);
     }
     return context;
   }
@@ -639,7 +597,13 @@ class $PlayerPositionsTable extends PlayerPositions
 class SaveSlot extends DataClass implements Insertable<SaveSlot> {
   final int id;
   final String name;
-  SaveSlot({required this.id, required this.name});
+  final String team1Colour;
+  final String team2Colour;
+  SaveSlot(
+      {required this.id,
+      required this.name,
+      required this.team1Colour,
+      required this.team2Colour});
   factory SaveSlot.fromData(Map<String, dynamic> data, GeneratedDatabase db,
       {String? prefix}) {
     final effectivePrefix = prefix ?? '';
@@ -648,6 +612,10 @@ class SaveSlot extends DataClass implements Insertable<SaveSlot> {
     return SaveSlot(
       id: intType.mapFromDatabaseResponse(data['${effectivePrefix}id'])!,
       name: stringType.mapFromDatabaseResponse(data['${effectivePrefix}name'])!,
+      team1Colour: stringType
+          .mapFromDatabaseResponse(data['${effectivePrefix}team1_colour'])!,
+      team2Colour: stringType
+          .mapFromDatabaseResponse(data['${effectivePrefix}team2_colour'])!,
     );
   }
   @override
@@ -655,6 +623,8 @@ class SaveSlot extends DataClass implements Insertable<SaveSlot> {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
     map['name'] = Variable<String>(name);
+    map['team1_colour'] = Variable<String>(team1Colour);
+    map['team2_colour'] = Variable<String>(team2Colour);
     return map;
   }
 
@@ -662,6 +632,8 @@ class SaveSlot extends DataClass implements Insertable<SaveSlot> {
     return SaveSlotsCompanion(
       id: Value(id),
       name: Value(name),
+      team1Colour: Value(team1Colour),
+      team2Colour: Value(team2Colour),
     );
   }
 
@@ -671,6 +643,8 @@ class SaveSlot extends DataClass implements Insertable<SaveSlot> {
     return SaveSlot(
       id: serializer.fromJson<int>(json['id']),
       name: serializer.fromJson<String>(json['name']),
+      team1Colour: serializer.fromJson<String>(json['team1Colour']),
+      team2Colour: serializer.fromJson<String>(json['team2Colour']),
     );
   }
   @override
@@ -679,55 +653,86 @@ class SaveSlot extends DataClass implements Insertable<SaveSlot> {
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
       'name': serializer.toJson<String>(name),
+      'team1Colour': serializer.toJson<String>(team1Colour),
+      'team2Colour': serializer.toJson<String>(team2Colour),
     };
   }
 
-  SaveSlot copyWith({int? id, String? name}) => SaveSlot(
+  SaveSlot copyWith(
+          {int? id, String? name, String? team1Colour, String? team2Colour}) =>
+      SaveSlot(
         id: id ?? this.id,
         name: name ?? this.name,
+        team1Colour: team1Colour ?? this.team1Colour,
+        team2Colour: team2Colour ?? this.team2Colour,
       );
   @override
   String toString() {
     return (StringBuffer('SaveSlot(')
           ..write('id: $id, ')
-          ..write('name: $name')
+          ..write('name: $name, ')
+          ..write('team1Colour: $team1Colour, ')
+          ..write('team2Colour: $team2Colour')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => $mrjf($mrjc(id.hashCode, name.hashCode));
+  int get hashCode => $mrjf($mrjc(id.hashCode,
+      $mrjc(name.hashCode, $mrjc(team1Colour.hashCode, team2Colour.hashCode))));
   @override
   bool operator ==(dynamic other) =>
       identical(this, other) ||
-      (other is SaveSlot && other.id == this.id && other.name == this.name);
+      (other is SaveSlot &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.team1Colour == this.team1Colour &&
+          other.team2Colour == this.team2Colour);
 }
 
 class SaveSlotsCompanion extends UpdateCompanion<SaveSlot> {
   final Value<int> id;
   final Value<String> name;
+  final Value<String> team1Colour;
+  final Value<String> team2Colour;
   const SaveSlotsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
+    this.team1Colour = const Value.absent(),
+    this.team2Colour = const Value.absent(),
   });
   SaveSlotsCompanion.insert({
     this.id = const Value.absent(),
     required String name,
-  }) : name = Value(name);
+    required String team1Colour,
+    required String team2Colour,
+  })  : name = Value(name),
+        team1Colour = Value(team1Colour),
+        team2Colour = Value(team2Colour);
   static Insertable<SaveSlot> custom({
     Expression<int>? id,
     Expression<String>? name,
+    Expression<String>? team1Colour,
+    Expression<String>? team2Colour,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (name != null) 'name': name,
+      if (team1Colour != null) 'team1_colour': team1Colour,
+      if (team2Colour != null) 'team2_colour': team2Colour,
     });
   }
 
-  SaveSlotsCompanion copyWith({Value<int>? id, Value<String>? name}) {
+  SaveSlotsCompanion copyWith(
+      {Value<int>? id,
+      Value<String>? name,
+      Value<String>? team1Colour,
+      Value<String>? team2Colour}) {
     return SaveSlotsCompanion(
       id: id ?? this.id,
       name: name ?? this.name,
+      team1Colour: team1Colour ?? this.team1Colour,
+      team2Colour: team2Colour ?? this.team2Colour,
     );
   }
 
@@ -740,6 +745,12 @@ class SaveSlotsCompanion extends UpdateCompanion<SaveSlot> {
     if (name.present) {
       map['name'] = Variable<String>(name.value);
     }
+    if (team1Colour.present) {
+      map['team1_colour'] = Variable<String>(team1Colour.value);
+    }
+    if (team2Colour.present) {
+      map['team2_colour'] = Variable<String>(team2Colour.value);
+    }
     return map;
   }
 
@@ -747,7 +758,9 @@ class SaveSlotsCompanion extends UpdateCompanion<SaveSlot> {
   String toString() {
     return (StringBuffer('SaveSlotsCompanion(')
           ..write('id: $id, ')
-          ..write('name: $name')
+          ..write('name: $name, ')
+          ..write('team1Colour: $team1Colour, ')
+          ..write('team2Colour: $team2Colour')
           ..write(')'))
         .toString();
   }
@@ -777,8 +790,32 @@ class $SaveSlotsTable extends SaveSlots
     );
   }
 
+  final VerificationMeta _team1ColourMeta =
+      const VerificationMeta('team1Colour');
   @override
-  List<GeneratedColumn> get $columns => [id, name];
+  late final GeneratedTextColumn team1Colour = _constructTeam1Colour();
+  GeneratedTextColumn _constructTeam1Colour() {
+    return GeneratedTextColumn(
+      'team1_colour',
+      $tableName,
+      false,
+    );
+  }
+
+  final VerificationMeta _team2ColourMeta =
+      const VerificationMeta('team2Colour');
+  @override
+  late final GeneratedTextColumn team2Colour = _constructTeam2Colour();
+  GeneratedTextColumn _constructTeam2Colour() {
+    return GeneratedTextColumn(
+      'team2_colour',
+      $tableName,
+      false,
+    );
+  }
+
+  @override
+  List<GeneratedColumn> get $columns => [id, name, team1Colour, team2Colour];
   @override
   $SaveSlotsTable get asDslTable => this;
   @override
@@ -798,6 +835,22 @@ class $SaveSlotsTable extends SaveSlots
           _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
     } else if (isInserting) {
       context.missing(_nameMeta);
+    }
+    if (data.containsKey('team1_colour')) {
+      context.handle(
+          _team1ColourMeta,
+          team1Colour.isAcceptableOrUnknown(
+              data['team1_colour']!, _team1ColourMeta));
+    } else if (isInserting) {
+      context.missing(_team1ColourMeta);
+    }
+    if (data.containsKey('team2_colour')) {
+      context.handle(
+          _team2ColourMeta,
+          team2Colour.isAcceptableOrUnknown(
+              data['team2_colour']!, _team2ColourMeta));
+    } else if (isInserting) {
+      context.missing(_team2ColourMeta);
     }
     return context;
   }

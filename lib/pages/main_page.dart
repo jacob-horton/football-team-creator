@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:football/bloc/current_team/current_team_bloc.dart';
 import 'package:football/bloc/formation/formation_bloc.dart';
 import 'package:football/bloc/formation_layouts/formation_layouts_bloc.dart';
+import 'package:football/bloc/team_colours/team_colours_bloc.dart';
 import 'package:football/data/moor_database.dart';
 import 'package:football/pages/slots_page.dart';
 import 'package:football/pages/team_editor.dart';
@@ -91,37 +92,41 @@ class MainPage extends StatelessWidget {
       teamText = " " + teamText + ">";
     else if (team == 2) teamText = "<" + teamText + " ";
 
-    return Stack(
-      children: [
-        Stack(children: players.map((player) => PlayerDraggable(playerWithPosition: player)).toList()),
-        Align(
-          alignment: Alignment.bottomCenter,
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () {
-              BlocProvider.of<FormationBloc>(context).add(SetCustomFormation(team: newTeam));
-
-              BlocProvider.of<FormationLayoutsBloc>(context, listen: false)
-                  .add(SetFormationLayoutSize(size: state.players.where((p) => p.position.team == newTeam).length));
-              if (team == 1) {
-                controller.nextPage(
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.ease,
-                );
-              } else {
-                controller.previousPage(
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.ease,
-                );
-              }
-            },
-            child: Padding(
-              padding: const EdgeInsets.all(15.0),
-              child: Text(teamText, style: Theme.of(context).textTheme.bodyText1),
+    return BlocBuilder<TeamColoursBloc, TeamColoursState>(
+      builder: (context, teamColoursState) {
+        return Stack(
+          children: [
+            Stack(children: players.map((player) => PlayerDraggable(playerWithPosition: player, colour: teamColoursState.teamColours[team - 1])).toList()),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  BlocProvider.of<FormationBloc>(context).add(SetCustomFormation(team: newTeam));
+    
+                  BlocProvider.of<FormationLayoutsBloc>(context, listen: false)
+                      .add(SetFormationLayoutSize(size: state.players.where((p) => p.position.team == newTeam).length));
+                  if (team == 1) {
+                    controller.nextPage(
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.ease,
+                    );
+                  } else {
+                    controller.previousPage(
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.ease,
+                    );
+                  }
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(15.0),
+                  child: Text(teamText, style: Theme.of(context).textTheme.bodyText1),
+                ),
+              ),
             ),
-          ),
-        ),
-      ],
+          ],
+        );
+      },
     );
   }
 

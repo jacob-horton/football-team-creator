@@ -9,7 +9,9 @@ class PlayerDraggable extends StatelessWidget {
   static const double size = 90;
   final PlayerWithPosition playerWithPosition;
 
-  PlayerDraggable({Key? key, required this.playerWithPosition}) : super(key: key);
+  final String colour;
+
+  PlayerDraggable({Key? key, required this.playerWithPosition, required this.colour}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -61,6 +63,7 @@ class PlayerDraggable extends StatelessWidget {
             player: playerWithPosition.player,
             showNumber: true,
             showName: true,
+            colour: colour,
             size: size,
           ),
         ),

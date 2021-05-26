@@ -4,7 +4,7 @@ import 'package:football/data/moor_database.dart';
 import 'package:football/utils/shirt_colours.dart';
 
 class Shirt extends StatelessWidget {
-  Shirt({Key? key, required this.size, this.player, this.colour, this.showNumber = false, this.showName = false}) : super(key: key);
+  Shirt({Key? key, required this.size, required this.colour, this.player, this.showNumber = false, this.showName = false}) : super(key: key);
 
   final double size;
   final Player? player;
@@ -22,7 +22,7 @@ class Shirt extends StatelessWidget {
             'assets/shirt.svg',
             width: size,
             height: size,
-            color: ShirtColours.colours[player?.colour ?? colour],
+            color: ShirtColours.colours[colour],
             colorBlendMode: BlendMode.color,
           ),
         ),
@@ -35,9 +35,6 @@ class Shirt extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                showNumber
-                    ? Text(player?.number.toString() ?? '', style: Theme.of(context).textTheme.bodyText1?.copyWith(fontSize: size / 3))
-                    : Container(),
                 showName
                     ? Padding(
                         padding: EdgeInsets.symmetric(horizontal: size / 4),
@@ -54,6 +51,9 @@ class Shirt extends StatelessWidget {
                           ),
                         ),
                       )
+                    : Container(),
+                showNumber
+                    ? Text(player?.number.toString() ?? '', style: Theme.of(context).textTheme.bodyText1?.copyWith(fontSize: size / 3))
                     : Container(),
               ],
             ),

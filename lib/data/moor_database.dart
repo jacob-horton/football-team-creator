@@ -1,7 +1,9 @@
 import 'dart:io';
 
+import 'package:football/bloc/team_colours/team_colours_bloc.dart';
 import 'package:moor/ffi.dart';
 import 'package:moor/moor.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 part 'moor_database.g.dart';
 
@@ -9,10 +11,9 @@ class Players extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get number => integer()();
   IntColumn get score => integer()();
-  // TODO: Fix spelling
-  IntColumn get preferedPosition => integer()(); // 0 - defence, 1 - mid, 2 - attack
+
+  IntColumn get preferredPosition => integer().named('prefered_position')(); // 0 - defence, 1 - mid, 2 - attack
   TextColumn get name => text()();
-  TextColumn get colour => text()(); // red, orange, green, blue, purple, pink
 }
 
 class PlayerPositions extends Table {
@@ -29,6 +30,8 @@ class PlayerPositions extends Table {
 class SaveSlots extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text()();
+  TextColumn get team1Colour => text()();
+  TextColumn get team2Colour => text()();
 }
 
 class SaveSlotPlayers extends Table {
@@ -55,10 +58,19 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 3;
 
   @override
-  MigrationStrategy get migration => MigrationStrategy(beforeOpen: (_) async => await customStatement('PRAGMA foreign_keys = ON'));
+  MigrationStrategy get migration => MigrationStrategy(
+        beforeOpen: (_) async => await customStatement('PRAGMA foreign_keys = ON'),
+        onUpgrade: (migrator, from, to) async {
+          if (from == 1) await migrator.alterTable(TableMigration(players));
+          if (from < 3) {
+            await migrator.addColumn(saveSlots, saveSlots.team1Colour);
+            await migrator.addColumn(saveSlots, saveSlots.team2Colour);
+          }
+        },
+      );
 }
 
 LazyDatabase _openConnection() {
@@ -189,7 +201,16 @@ class SaveSlotDao extends DatabaseAccessor<AppDatabase> with _$SaveSlotDaoMixin 
   SaveSlotDao(this.db) : super(db);
 
   Future saveSlot(String name) async {
-    int slotId = await into(saveSlots).insert(SaveSlotsCompanion(name: Value(name)));
+    final prefs = await SharedPreferences.getInstance();
+    final List<String> teamColours = prefs.getStringList(TeamColoursBloc.key) ?? TeamColoursBloc.defaultValues;
+
+    int slotId = await into(saveSlots).insert(
+      SaveSlotsCompanion(
+        name: Value(name),
+        team1Colour: Value(teamColours[0]),
+        team2Colour: Value(teamColours[1]),
+      ),
+    );
 
     final currentPlayers = await db.currentPlayerDao.getAllPlayers();
 
@@ -206,26 +227,31 @@ class SaveSlotDao extends DatabaseAccessor<AppDatabase> with _$SaveSlotDaoMixin 
     }
   }
 
-  Future<List<PlayerWithPosition>> loadSlot(String name) => (select(saveSlots)..where((slot) => slot.name.equals(name)))
-      .join(
-        [
-          leftOuterJoin(
-            saveSlotPlayers,
-            saveSlotPlayers.saveSlotId.equalsExp(saveSlots.id),
-          ),
-          leftOuterJoin(
-            players,
-            players.id.equalsExp(saveSlotPlayers.playerId),
-          ),
-        ],
-      )
-      .map(
-        (row) => PlayerWithPosition(
+  Future<Slot> loadSlot(String name) async {
+    final selectStatement = select(saveSlots)..where((slot) => slot.name.equals(name));
+    final playersWithPositions = await selectStatement.join(
+      [
+        leftOuterJoin(
+          saveSlotPlayers,
+          saveSlotPlayers.saveSlotId.equalsExp(saveSlots.id),
+        ),
+        leftOuterJoin(
+          players,
+          players.id.equalsExp(saveSlotPlayers.playerId),
+        ),
+      ],
+    ).map(
+      (row) {
+        return PlayerWithPosition(
           player: row.readTable(players),
           position: _convertSaveSlotPlayerToPosition(row.readTable(saveSlotPlayers)),
-        ),
-      )
-      .get();
+        );
+      },
+    ).get();
+
+    final slot = (await selectStatement.getSingle());
+    return Slot(players: playersWithPositions, team1Colour: slot.team1Colour, team2Colour: slot.team2Colour);
+  }
 
   PlayerPosition _convertSaveSlotPlayerToPosition(SaveSlotPlayer player) {
     return PlayerPosition(playerId: player.playerId, team: player.team, x: player.x, y: player.y);
@@ -233,9 +259,16 @@ class SaveSlotDao extends DatabaseAccessor<AppDatabase> with _$SaveSlotDaoMixin 
 
   Stream<List<SaveSlot>> watchAllSlots() => select(saveSlots).watch();
 
-  void deleteSlot(String name) async {
-    final slotId = (await (select(saveSlots)..where((slot) => slot.name.equals(name))).getSingle()).id;
+  void deleteSlotFromId(int slotId) async {
     (delete(saveSlotPlayers)..where((player) => player.saveSlotId.equals(slotId))).go();
-    (delete(saveSlots)..where((slot) => slot.name.equals(name))).go();
+    (delete(saveSlots)..where((slot) => slot.id.equals(slotId))).go();
   }
+}
+
+class Slot {
+  final List<PlayerWithPosition> players;
+  final String team1Colour;
+  final String team2Colour;
+
+  Slot({required this.players, required this.team1Colour, required this.team2Colour});
 }

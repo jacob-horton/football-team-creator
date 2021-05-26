@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:football/bloc/formation/formation_bloc.dart';
 import 'package:football/bloc/selected_player/selected_player_bloc.dart';
+import 'package:football/bloc/team_colours/team_colours_bloc.dart';
 import 'package:football/data/moor_database.dart';
 import 'package:football/widgets/player_list_item.dart';
 import 'package:provider/provider.dart';
@@ -71,29 +72,44 @@ class _PlayerSearcherState extends State<PlayerSearcher> {
                         else if (selectedPlayersState is MultiSelectionState)
                           isSelected = selectedPlayersState.players.any((player) => player.id == players[index].id);
 
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 3.0),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(10.0),
-                              color: Colors.blue.withOpacity(isSelected ? 0.15 : 0),
-                            ),
-                            child: PlayerListItem(
-                              player: players[index],
-                              onTap: (p) {
-                                EditablePlayer player = EditablePlayer.fromPlayer(p);
-                                SelectedPlayersEvent event;
-                                if (widget.multiselect) {
-                                  if (selectedPlayersState is MultiSelectionState && selectedPlayersState.players.any((p) => p.id == player.id))
-                                    event = RemoveSelectedPlayer(player: player);
-                                  else
-                                    event = AddSelectedPlayer(player: player);
-                                } else
-                                  event = SetSelectedPlayer(player: player);
-                                BlocProvider.of<SelectedPlayersBloc>(context, listen: false).add(event);
+                        return BlocBuilder<FormationBloc, FormationState>(
+                          builder: (context, formationState) {
+                            return BlocBuilder<TeamColoursBloc, TeamColoursState>(
+                              builder: (context, teamColoursState) {
+                                final playersWithPositions = formationState.players.where((player) => player.player.id == players[index].id);
+
+                                String colour = '';
+                                if (playersWithPositions.isNotEmpty) colour = teamColoursState.teamColours[playersWithPositions.first.position.team - 1];
+
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 3.0),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10.0),
+                                      color: Colors.blue.withOpacity(isSelected ? 0.15 : 0),
+                                    ),
+                                    child: PlayerListItem(
+                                      player: players[index],
+                                      colour: colour,
+                                      onTap: (p) {
+                                        EditablePlayer player = EditablePlayer.fromPlayer(p);
+                                        SelectedPlayersEvent event;
+                                        if (widget.multiselect) {
+                                          if (selectedPlayersState is MultiSelectionState &&
+                                              selectedPlayersState.players.any((p) => p.id == player.id))
+                                            event = RemoveSelectedPlayer(player: player);
+                                          else
+                                            event = AddSelectedPlayer(player: player);
+                                        } else
+                                          event = SetSelectedPlayer(player: player);
+                                        BlocProvider.of<SelectedPlayersBloc>(context, listen: false).add(event);
+                                      },
+                                    ),
+                                  ),
+                                );
                               },
-                            ),
-                          ),
+                            );
+                          },
                         );
                       },
                       separatorBuilder: (_, __) => Divider(height: 0),
