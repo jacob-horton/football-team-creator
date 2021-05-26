@@ -30,8 +30,8 @@ class PlayerPositions extends Table {
 class SaveSlots extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text()();
-  TextColumn get team1Colour => text()();
-  TextColumn get team2Colour => text()();
+  TextColumn get team1Colour => text().withDefault(Constant('red'))();
+  TextColumn get team2Colour => text().withDefault(Constant('blue'))();
 }
 
 class SaveSlotPlayers extends Table {
