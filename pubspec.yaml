@@ -35,6 +35,7 @@ dependencies:
   moor: ^4.2.1
   path_provider: ^2.0.1
   provider: ^5.0.0
+  shared_preferences: ^2.0.6
   sqlite3_flutter_libs: ^0.4.1
 
 dev_dependencies:

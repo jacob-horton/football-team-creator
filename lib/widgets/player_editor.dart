@@ -16,12 +16,12 @@ class PlayerEditor extends StatelessWidget {
 
   final nameController = TextEditingController();
   final scoreController = TextEditingController();
-  final colourController = TextEditingController();
   final numberController = TextEditingController();
   final preferredPositionController = TextEditingController();
 
   final List<String> positions = ['Defense', 'Midfield', 'Attack'];
 
+  // TODO: Deal with empty fields
   @override
   Widget build(BuildContext context) {
     // TODO: fix selection when adding new players
@@ -37,11 +37,10 @@ class PlayerEditor extends StatelessWidget {
               // TODO: Move updating to bloc
               final player = PlayersCompanion(
                 id: state.selectedPlayer?.id == null ? Value.absent() : Value(state.selectedPlayer?.id as int),
-                colour: state.selectedPlayer?.colour == null ? Value.absent() : Value(state.selectedPlayer?.colour as String),
                 name: state.selectedPlayer?.name == null ? Value.absent() : Value(state.selectedPlayer?.name as String),
                 number: state.selectedPlayer?.number == null ? Value.absent() : Value(state.selectedPlayer?.number as int),
                 score: state.selectedPlayer?.score == null ? Value.absent() : Value(state.selectedPlayer?.score as int),
-                preferedPosition: Value(state.selectedPlayer?.preferredPosition ?? 0),
+                preferredPosition: Value(state.selectedPlayer?.preferredPosition ?? 0),
               );
 
               if (state is NewPlayerState) {
@@ -52,10 +51,10 @@ class PlayerEditor extends StatelessWidget {
               BlocProvider.of<FormationBloc>(context, listen: false).add(LoadPositions());
             },
             onDelete: () {
+              // TODO: deal with only 1 player left
               BlocProvider.of<SelectedPlayersBloc>(context, listen: false).add(ClearSelectedPlayer());
               BlocProvider.of<FormationBloc>(context, listen: false)
                   .add(PermenantlyDeletePlayer(player: state.selectedPlayer?.toPlayer() as Player, windowSize: MediaQuery.of(context).size));
-              //Provider.of<PlayerDao>(context, listen: false).deletePlayerFromID(state.selectedPlayer?.id as int);
             },
             player: state.selectedPlayer as EditablePlayer,
           );
@@ -68,7 +67,6 @@ class PlayerEditor extends StatelessWidget {
   _clearFields() {
     nameController.clear();
     scoreController.clear();
-    colourController.clear();
     numberController.clear();
     preferredPositionController.clear();
   }
@@ -81,7 +79,6 @@ class PlayerEditor extends StatelessWidget {
     Function()? onDelete,
   }) {
     _updateController(nameController, player.name);
-    _updateController(colourController, player.colour);
     _updateController(scoreController, player.score);
     _updateController(numberController, player.number);
     _updateController(preferredPositionController, player.preferredPosition);
@@ -92,8 +89,6 @@ class PlayerEditor extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(padding: const EdgeInsets.only(top: 10.0)),
-          ColourPicker(state: state),
-          Padding(padding: const EdgeInsets.only(top: 25.0)),
           _buildField(
             'Name',
             nameController,

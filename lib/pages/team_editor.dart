@@ -4,8 +4,11 @@ import 'package:football/bloc/current_team/current_team_bloc.dart';
 import 'package:football/bloc/formation/formation_bloc.dart';
 import 'package:football/bloc/formation_layouts/formation_layouts_bloc.dart';
 import 'package:football/bloc/selected_player/selected_player_bloc.dart';
+import 'package:football/bloc/team_colours/team_colours_bloc.dart';
 import 'package:football/data/moor_database.dart';
 import 'package:football/pages/player_selector.dart';
+import 'package:football/utils/shirt_colours.dart';
+import 'package:football/widgets/colour_picker.dart';
 import 'package:football/widgets/player_list_item.dart';
 
 class TeamEditor extends StatelessWidget {
@@ -86,6 +89,7 @@ class TeamEditor extends StatelessWidget {
     );
   }
 
+  final colourCircleRadius = 8;
   Widget _buildTeam(BuildContext context, FormationState state, int teamNumber) {
     final players = state.players.where((player) => player.position.team == teamNumber);
 
@@ -98,39 +102,77 @@ class TeamEditor extends StatelessWidget {
       },
       builder: (context, _, __) => Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(15.0),
-            child: Text('Team ${teamNumber.toString()}', style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold)),
+          BlocBuilder<TeamColoursBloc, TeamColoursState>(
+            builder: (context, state) {
+              return Padding(
+                padding: const EdgeInsets.all(15.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    GestureDetector(
+                      onTap: () => showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          content: ColourPicker(
+                            initialColour: state.teamColours[teamNumber - 1],
+                            onTap: (colour) => BlocProvider.of<TeamColoursBloc>(context, listen: false).add(
+                              SetTeamColour(colour: colour, team: teamNumber),
+                            ),
+                          ),
+                          actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: Text('DONE'))],
+                        ),
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: ShirtColours.colours[state.teamColours[teamNumber - 1]],
+                          borderRadius: BorderRadius.circular(colourCircleRadius * 2),
+                        ),
+                        height: colourCircleRadius * 2,
+                        width: colourCircleRadius * 2,
+                      ),
+                    ),
+                    Padding(padding: const EdgeInsets.only(left: 10.0)),
+                    Text('Team ${teamNumber.toString()}', style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              );
+            },
           ),
           Expanded(
-            child: ListView(
-              children: (players.toList()..sort((a, b) => a.player.name.compareTo(b.player.name))).map(
-                (player) {
-                  final listItem = PlayerListItem(
-                    player: player.player,
-                    onTap: (_) async {
-                      Object? newPlayer = await Navigator.of(context).push(
-                        new MaterialPageRoute(
-                          builder: (context) => PlayerSelector(
-                            multiselect: false,
-                            initialPlayers: [player.player],
-                          ),
-                        ),
+            child: BlocBuilder<TeamColoursBloc, TeamColoursState>(
+              builder: (context, teamColoursState) {
+                return ListView(
+                  children: (players.toList()..sort((a, b) => a.player.name.compareTo(b.player.name))).map(
+                    (player) {
+                      final listItem = PlayerListItem(
+                        player: player.player,
+                        colour: teamColoursState.teamColours[teamNumber - 1],
+                        onTap: (_) async {
+                          Object? newPlayer = await Navigator.of(context).push(
+                            new MaterialPageRoute(
+                              builder: (context) => PlayerSelector(
+                                multiselect: false,
+                                initialPlayers: [player.player],
+                              ),
+                            ),
+                          );
+
+                          if (newPlayer is EditablePlayer)
+                            BlocProvider.of<FormationBloc>(context).add(SwapPlayer(oldPlayer: player, newPlayer: newPlayer.toPlayer() as Player));
+                        },
                       );
 
-                      if (newPlayer is EditablePlayer)
-                        BlocProvider.of<FormationBloc>(context).add(SwapPlayer(oldPlayer: player, newPlayer: newPlayer.toPlayer() as Player));
+                      return Draggable<PlayerWithPosition>(
+                        childWhenDragging: Container(),
+                        feedback: Material(child: listItem, type: MaterialType.transparency),
+                        child: listItem,
+                        data: player,
+                      );
                     },
-                  );
-
-                  return Draggable<PlayerWithPosition>(
-                    childWhenDragging: Container(),
-                    feedback: Material(child: listItem, type: MaterialType.transparency),
-                    child: listItem,
-                    data: player,
-                  );
-                },
-              ).toList(),
+                  ).toList(),
+                );
+              },
             ),
           ),
           Text(
